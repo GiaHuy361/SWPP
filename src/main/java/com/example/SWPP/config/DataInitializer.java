@@ -1,81 +1,59 @@
 package com.example.SWPP.config;
 
-import com.example.SWPP.entity.Role;
 import com.example.SWPP.entity.User;
-import com.example.SWPP.repository.RoleRepository;
 import com.example.SWPP.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
 
-    private final RoleRepository roleRepository;
+    private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
+
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public DataInitializer(RoleRepository roleRepository, UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
-        this.roleRepository = roleRepository;
+    public DataInitializer(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        // Khởi tạo vai trò Admin nếu chưa tồn tại
-        Optional<Role> adminRole = roleRepository.findByRoleName("Admin");
-        if (!adminRole.isPresent()) {
-            Role newAdminRole = new Role();
-            newAdminRole.setRoleName("Admin");
-            newAdminRole.setDescription("Quản trị viên hệ thống");
-            roleRepository.save(newAdminRole);
-        }
+        logger.info("DataInitializer is running...");
 
-        // Khởi tạo vai trò Member nếu chưa tồn tại
-        Optional<Role> memberRole = roleRepository.findByRoleName("Member");
-        if (!memberRole.isPresent()) {
-            Role newMemberRole = new Role();
-            newMemberRole.setRoleName("Member");
-            newMemberRole.setDescription("Thành viên đã đăng ký");
-            roleRepository.save(newMemberRole);
+        // Lấy tất cả người dùng hiện có
+        List<User> allUsers = userRepository.findAll();
+        for (User user : allUsers) {
+            String currentPassword = user.getPasswordHash();
+            if (currentPassword != null && !currentPassword.trim().isEmpty() && !isBcryptEncoded(currentPassword)) {
+                // Giữ nguyên mật khẩu hiện tại nhưng mã hóa lại
+                String encodedPassword = passwordEncoder.encode(currentPassword);
+                user.setPasswordHash(encodedPassword);
+                user.setUpdatedAt(LocalDateTime.now());
+                userRepository.save(user);
+                logger.info("Re-encoded password for email={} with existing password: {}", user.getEmail(), encodedPassword);
+            } else if (currentPassword == null || currentPassword.trim().isEmpty()) {
+                // Nếu mật khẩu trống, đặt một giá trị mặc định (có thể tùy chỉnh)
+                String defaultPassword = "temp123"; // Bạn có thể thay bằng giá trị khác hoặc bỏ qua
+                String encodedPassword = passwordEncoder.encode(defaultPassword);
+                user.setPasswordHash(encodedPassword);
+                user.setUpdatedAt(LocalDateTime.now());
+                userRepository.save(user);
+                logger.warn("Set default encoded password for email={} because it was empty: {}", user.getEmail(), encodedPassword);
+            } else {
+                logger.info("Password for email={} is already encoded or valid", user.getEmail());
+            }
         }
+    }
 
-        // Khởi tạo người dùng Admin nếu chưa tồn tại
-        Optional<User> adminUser = userRepository.findByEmail("admin@example.com");
-        if (!adminUser.isPresent()) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setEmail("admin@example.com");
-            admin.setFullName("Admin User");
-            admin.setPhone("1234567890");
-            admin.setStatus(1);
-            admin.setCreatedAt(LocalDateTime.now());
-            admin.setUpdatedAt(LocalDateTime.now());
-            admin.setPasswordHash(passwordEncoder.encode("adminpass123")); // Mã hóa mật khẩu
-            admin.setLoginType("standard");
-            admin.setRole(roleRepository.findByRoleName("Admin").get());
-            userRepository.save(admin);
-        }
-
-        // Khởi tạo người dùng Member nếu chưa tồn tại
-        Optional<User> memberUser = userRepository.findByEmail("member@example.com");
-        if (!memberUser.isPresent()) {
-            User member = new User();
-            member.setUsername("member");
-            member.setEmail("member@example.com");
-            member.setFullName("Member User");
-            member.setPhone("0987654321");
-            member.setStatus(1);
-            member.setCreatedAt(LocalDateTime.now());
-            member.setUpdatedAt(LocalDateTime.now());
-            member.setPasswordHash(passwordEncoder.encode("memberpass123")); // Mã hóa mật khẩu
-            member.setLoginType("standard");
-            member.setRole(roleRepository.findByRoleName("Member").get());
-            userRepository.save(member);
-        }
+    private boolean isBcryptEncoded(String passwordHash) {
+        return passwordHash != null && (passwordHash.startsWith("$2a$") || passwordHash.startsWith("$2b$") || passwordHash.startsWith("$2y$"));
     }
 }
