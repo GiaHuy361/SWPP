@@ -32,12 +32,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // Vô hiệu hóa CSRF vì sử dụng API REST
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .sessionFixation().migrateSession()
-                        .maximumSessions(1)
+                        .maximumSessions(1) // Giới hạn một phiên đăng nhập mỗi người dùng
                 )
                 .securityContext(security -> security.requireExplicitSave(false))
                 .exceptionHandling(ex -> ex
@@ -45,17 +45,21 @@ public class SecurityConfig {
                         .accessDeniedHandler((req, res, e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied"))
                 )
                 .authorizeHttpRequests(authz -> authz
-                        // API công khai từ AuthController
+                        // API công khai (permitAll)
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login-google").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/verify-code").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
+                        // API yêu cầu xác thực
                         .requestMatchers(HttpMethod.GET, "/api/auth/user").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/auth/users/{email}").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/users").hasRole("Admin")
                         .requestMatchers(HttpMethod.PUT, "/api/auth/users/{userId}").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/auth/users/{userId}").hasRole("Admin")
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
-                        // API từ UserRoleController
+                        // API yêu cầu vai trò Admin
+                        .requestMatchers(HttpMethod.GET, "/api/auth/users").hasRole("Admin")
+                        .requestMatchers(HttpMethod.DELETE, "/api/auth/users/{userId}").hasRole("Admin")
                         .requestMatchers(HttpMethod.GET, "/api/admin/users/{userId}/role").hasRole("Admin")
                         .requestMatchers(HttpMethod.POST, "/api/admin/users/{userId}/role/{roleId}").hasRole("Admin")
                         .requestMatchers(HttpMethod.DELETE, "/api/admin/users/{userId}/role").hasRole("Admin")
@@ -67,6 +71,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/admin/roles/{roleId}/permissions").hasRole("Admin")
                         .requestMatchers(HttpMethod.PUT, "/api/admin/roles/{roleId}/permissions/{permissionId}").hasRole("Admin")
                         .requestMatchers(HttpMethod.DELETE, "/api/admin/roles/{roleId}/permissions/{permissionId}").hasRole("Admin")
+                        // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider());
