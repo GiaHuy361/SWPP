@@ -71,6 +71,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/admin/roles/{roleId}/permissions").hasRole("Admin")
                         .requestMatchers(HttpMethod.PUT, "/api/admin/roles/{roleId}/permissions/{permissionId}").hasRole("Admin")
                         .requestMatchers(HttpMethod.DELETE, "/api/admin/roles/{roleId}/permissions/{permissionId}").hasRole("Admin")
+
+
+                        .requestMatchers(HttpMethod.GET, "/api/surveys").permitAll()
                         // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )

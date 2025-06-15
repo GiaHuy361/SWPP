@@ -1,10 +1,6 @@
 package com.example.SWPP.entity;
 
-
 import jakarta.persistence.*;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "role_permissions")
@@ -18,7 +14,7 @@ public class RolePermission {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @Column(name = "permission_name", nullable = false, unique = true)
+    @Column(name = "permission_name", nullable = false) // Loại bỏ unique = true
     private String permissionName;
 
     @Column(name = "description")
@@ -26,6 +22,11 @@ public class RolePermission {
 
     // Constructors
     public RolePermission() {}
+
+    public RolePermission(String permissionName, String description) {
+        this.permissionName = permissionName;
+        this.description = description;
+    }
 
     // Getters and Setters
     public Long getRolePermissionId() {

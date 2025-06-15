@@ -67,27 +67,31 @@ public class AuthController {
     // Đăng nhập
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult, HttpServletRequest httpRequest) {
-        logger.info("Login attempt: email={}, sessionId={}", request.getEmail(), httpRequest.getSession().getId());
+        logger.info("Login attempt: usernameOrEmail={}, sessionId={}", request.getUsernameOrEmail(), httpRequest.getSession().getId());
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getFieldError().getDefaultMessage();
             logger.warn("Login failed: validation error - {}", errorMsg);
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
-            Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+            // Tìm người dùng theo username hoặc email
+            Optional<User> userOptional = userRepository.findByUsername(request.getUsernameOrEmail());
             if (!userOptional.isPresent()) {
-                logger.warn("User not found for email: {}", request.getEmail());
+                userOptional = userRepository.findByEmail(request.getUsernameOrEmail());
+            }
+            if (!userOptional.isPresent()) {
+                logger.warn("User not found for username or email: {}", request.getUsernameOrEmail());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Email không tồn tại"));
+                        .body(Map.of("message", "Tên đăng nhập hoặc email không tồn tại"));
             }
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword())
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
             HttpSession session = httpRequest.getSession(true);
             session.setMaxInactiveInterval(30 * 60);
-            logger.info("Login successful: email={}, authorities={}, sessionId={}",
-                    request.getEmail(), authentication.getAuthorities(), session.getId());
+            logger.info("Login successful: usernameOrEmail={}, authorities={}, sessionId={}",
+                    request.getUsernameOrEmail(), authentication.getAuthorities(), session.getId());
             User user = userOptional.get();
             return ResponseEntity.ok(Map.of(
                     "userId", user.getUserId(),
@@ -97,9 +101,9 @@ public class AuthController {
                     "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest"
             ));
         } catch (Exception e) {
-            logger.error("Login failed for email={}: {}", request.getEmail(), e.getMessage());
+            logger.error("Login failed for usernameOrEmail={}: {}", request.getUsernameOrEmail(), e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Email hoặc mật khẩu không hợp lệ"));
+                    .body(Map.of("message", "Tên đăng nhập, email hoặc mật khẩu không hợp lệ"));
         }
     }
 

@@ -1,6 +1,5 @@
 package com.example.SWPP.entity;
 
-
 import jakarta.persistence.*;
 
 import java.util.HashSet;
@@ -25,6 +24,11 @@ public class Role {
 
     // Constructors
     public Role() {}
+
+    public Role(String roleName, String description) {
+        this.roleName = roleName;
+        this.description = description;
+    }
 
     // Getters and Setters
     public Long getRoleId() {
@@ -57,5 +61,15 @@ public class Role {
 
     public void setRolePermissions(Set<RolePermission> rolePermissions) {
         this.rolePermissions = rolePermissions;
+    }
+
+    public void addRolePermission(RolePermission rolePermission) {
+        rolePermissions.add(rolePermission);
+        rolePermission.setRole(this);
+    }
+
+    public void removeRolePermission(RolePermission rolePermission) {
+        rolePermissions.remove(rolePermission);
+        rolePermission.setRole(null);
     }
 }

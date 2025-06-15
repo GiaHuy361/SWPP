@@ -1,8 +1,6 @@
 package com.example.SWPP.config;
 
-import com.example.SWPP.entity.Role;
 import com.example.SWPP.entity.User;
-import com.example.SWPP.repository.RoleRepository;
 import com.example.SWPP.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -20,44 +17,16 @@ public class DataInitializer implements CommandLineRunner {
     private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public DataInitializer(UserRepository userRepository, RoleRepository roleRepository, BCryptPasswordEncoder passwordEncoder) {
+    public DataInitializer(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) throws Exception {
         logger.info("DataInitializer is running...");
-
-        // Khởi tạo vai trò Admin nếu chưa tồn tại
-        Optional<Role> adminRole = roleRepository.findByRoleName("Admin");
-        if (!adminRole.isPresent()) {
-            Role newAdminRole = new Role();
-            newAdminRole.setRoleName("Admin");
-            newAdminRole.setDescription("Quản trị viên hệ thống");
-            roleRepository.save(newAdminRole);
-            logger.info("Created Admin role");
-        }
-
-        // Khởi tạo vai trò Member nếu chưa tồn tại
-        Optional<Role> memberRole = roleRepository.findByRoleName("Member");
-        if (!memberRole.isPresent()) {
-            Role newMemberRole = new Role();
-            newMemberRole.setRoleName("Member");
-            newMemberRole.setDescription("Thành viên đã đăng ký");
-            roleRepository.save(newMemberRole);
-            logger.info("Created Member role");
-        }
-
-        // Tạo hoặc cập nhật người dùng Admin
-        ensureUser("admin@example.com", "admin", "Admin User", "1234567890", "adminpass123", "Admin");
-
-        // Tạo hoặc cập nhật người dùng Member
-        ensureUser("member@example.com", "member", "Member User", "0987654321", "memberpass123", "Member");
 
         // Mã hóa lại mật khẩu cho tất cả người dùng hiện có
         List<User> allUsers = userRepository.findAll();
@@ -81,27 +50,6 @@ public class DataInitializer implements CommandLineRunner {
             } else {
                 logger.info("Password for email={} is already encoded or valid", user.getEmail());
             }
-        }
-    }
-
-    private void ensureUser(String email, String username, String fullName, String phone, String password, String roleName) {
-        Optional<User> existingUser = userRepository.findByEmail(email);
-        if (!existingUser.isPresent()) {
-            User user = new User();
-            user.setUsername(username);
-            user.setEmail(email);
-            user.setFullName(fullName);
-            user.setPhone(phone);
-            user.setStatus(1);
-            user.setCreatedAt(LocalDateTime.now());
-            user.setUpdatedAt(LocalDateTime.now());
-            user.setPasswordHash(passwordEncoder.encode(password));
-            user.setLoginType("standard");
-            user.setRole(roleRepository.findByRoleName(roleName).get());
-            userRepository.save(user);
-            logger.info("Created user with email={} and encoded password", email);
-        } else {
-            logger.info("User with email={} already exists", email);
         }
     }
 
