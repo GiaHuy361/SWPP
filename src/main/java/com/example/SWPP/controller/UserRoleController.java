@@ -6,6 +6,8 @@ import com.example.SWPP.dto.UpdateRolePermissionRequest;
 import com.example.SWPP.dto.UpdateRoleRequest;
 import com.example.SWPP.entity.Role;
 import com.example.SWPP.entity.RolePermission;
+import com.example.SWPP.repository.RolePermissionRepository;
+import com.example.SWPP.repository.RoleRepository;
 import com.example.SWPP.service.UserRoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +29,14 @@ public class UserRoleController {
     private static final Logger logger = LoggerFactory.getLogger(UserRoleController.class);
 
     private final UserRoleService userRoleService;
+    private final RoleRepository roleRepository;
+    private final RolePermissionRepository rolePermissionRepository;
 
-    public UserRoleController(UserRoleService userRoleService) {
+    public UserRoleController(UserRoleService userRoleService, RoleRepository roleRepository,
+                              RolePermissionRepository rolePermissionRepository) {
         this.userRoleService = userRoleService;
+        this.roleRepository = roleRepository;
+        this.rolePermissionRepository = rolePermissionRepository;
     }
 
     // Read: Lấy vai trò của người dùng
@@ -254,6 +261,25 @@ public class UserRoleController {
             logger.error("Failed to delete permission roleId={}, permissionId={}: {}", roleId, permissionId, e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Xóa quyền thất bại"));
+        }
+    }
+
+    // Read: Lấy danh sách quyền theo tên vai trò
+    @GetMapping("/role-permissions")
+    public ResponseEntity<?> getPermissionsByRole(@RequestParam String role) {
+        try {
+            Role roleEntity = roleRepository.findByRoleName(role)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + role));
+            List<RolePermission> permissions = rolePermissionRepository.findByRoleId(roleEntity.getRoleId());
+            List<String> permissionNames = permissions.stream()
+                    .map(RolePermission::getPermissionName)
+                    .collect(Collectors.toList());
+            logger.info("Fetched permissions for role={}: count={}", role, permissionNames.size());
+            return ResponseEntity.ok(permissionNames);
+        } catch (Exception e) {
+            logger.error("Failed to fetch permissions for role={}: {}", role, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Không tìm thấy quyền cho vai trò: " + role));
         }
     }
 }

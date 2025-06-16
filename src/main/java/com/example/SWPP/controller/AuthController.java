@@ -328,27 +328,31 @@ public class AuthController {
     }
 
     // Lấy danh sách tất cả người dùng (cho admin)
+    @Transactional
     @GetMapping("/users")
     @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<?> getAllUsers() {
         logger.info("Fetching all users");
         try {
             List<User> users = userRepository.findAll();
+            logger.info("Found {} users", users.size());
+            users.forEach(user -> logger.debug("User: email={}, role={}", user.getEmail(), user.getRole() != null ? user.getRole().getRoleName() : "Guest"));
             List<Map<String, Object>> userList = users.stream().map(user -> {
                 Map<String, Object> userMap = new java.util.HashMap<>();
                 userMap.put("userId", user.getUserId());
-                userMap.put("email", user.getEmail());
-                userMap.put("username", user.getUsername());
-                userMap.put("fullName", user.getFullName());
+                userMap.put("email", user.getEmail() != null ? user.getEmail() : "");
+                userMap.put("username", user.getUsername() != null ? user.getUsername() : "");
+                userMap.put("fullName", user.getFullName() != null ? user.getFullName() : "");
                 userMap.put("phone", user.getPhone() != null ? user.getPhone() : "");
                 userMap.put("role", user.getRole() != null ? user.getRole().getRoleName() : "Guest");
                 return userMap;
             }).collect(Collectors.toList());
+            logger.info("Returning user list with {} entries", userList.size());
             return ResponseEntity.ok(userList);
         } catch (Exception e) {
-            logger.error("Failed to fetch all users: {}", e.getMessage());
+            logger.error("Failed to fetch all users: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Lỗi khi lấy danh sách người dùng"));
+                    .body(Map.of("message", "Lỗi khi lấy danh sách người dùng: " + e.getMessage()));
         }
     }
 
