@@ -1,31 +1,11 @@
-package com.example.SWPP.entity;
+package com.example.SWPP.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
-import java.util.List;
-
-@Entity
-@Table(name = "survey_type")
-public class SurveyType {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class SurveyTypeDTO {
     private Long id;
-
-    @Column(length = 100)
     private String name;
-
-    @Column(columnDefinition = "TEXT")
     private String description;
-
-    @Column
     private Integer maxScore;
-
-    @Column(columnDefinition = "TEXT")
     private String riskThresholds;
-
-    @OneToMany(mappedBy = "surveyType", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Survey> surveys;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -37,6 +17,4 @@ public class SurveyType {
     public void setMaxScore(Integer maxScore) { this.maxScore = maxScore; }
     public String getRiskThresholds() { return riskThresholds; }
     public void setRiskThresholds(String riskThresholds) { this.riskThresholds = riskThresholds; }
-    public List<Survey> getSurveys() { return surveys; }
-    public void setSurveys(List<Survey> surveys) { this.surveys = surveys; }
 }

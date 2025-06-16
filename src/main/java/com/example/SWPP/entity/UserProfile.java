@@ -1,10 +1,11 @@
 package com.example.SWPP.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "user_profiles")
+@Table(name = "user_profiles", indexes = {@Index(name = "idx_user_id", columnList = "user_id")})
 public class UserProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,31 +15,43 @@ public class UserProfile {
     @Column(name = "user_id", nullable = false, unique = true, insertable = false, updatable = false)
     private Long userId;
 
+    @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     @MapsId
     private User user;
 
+    @NotNull
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "gender", length = 20, nullable = false)
-    private String gender;
+    private Gender gender;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "last_survey_id", referencedColumnName = "id")
     private Survey lastSurvey;
 
-    @Column(name = "last_survey_score", nullable = false)
+    @Column(name = "last_survey_score")
     private Integer lastSurveyScore;
 
-    @Column(name = "last_survey_risk_level", length = 50, nullable = false)
-    private String lastSurveyRiskLevel;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "last_survey_risk_level", length = 50)
+    private RiskLevel lastSurveyRiskLevel;
 
-    @Column(name = "last_survey_date", nullable = false)
+    @Column(name = "last_survey_date")
     private LocalDate lastSurveyDate;
 
-    // Constructors
+    public enum Gender {
+        MALE, FEMALE, OTHER
+    }
+
+    public enum RiskLevel {
+        LOW_RISK, MODERATE_RISK, HIGH_RISK
+    }
+
     public UserProfile() {}
 
     // Getters and Setters
@@ -55,14 +68,14 @@ public class UserProfile {
     }
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
-    public String getGender() { return gender; }
-    public void setGender(String gender) { this.gender = gender; }
+    public Gender getGender() { return gender; }
+    public void setGender(Gender gender) { this.gender = gender; }
     public Survey getLastSurvey() { return lastSurvey; }
     public void setLastSurvey(Survey lastSurvey) { this.lastSurvey = lastSurvey; }
     public Integer getLastSurveyScore() { return lastSurveyScore; }
     public void setLastSurveyScore(Integer lastSurveyScore) { this.lastSurveyScore = lastSurveyScore; }
-    public String getLastSurveyRiskLevel() { return lastSurveyRiskLevel; }
-    public void setLastSurveyRiskLevel(String lastSurveyRiskLevel) { this.lastSurveyRiskLevel = lastSurveyRiskLevel; }
+    public RiskLevel getLastSurveyRiskLevel() { return lastSurveyRiskLevel; }
+    public void setLastSurveyRiskLevel(RiskLevel lastSurveyRiskLevel) { this.lastSurveyRiskLevel = lastSurveyRiskLevel; }
     public LocalDate getLastSurveyDate() { return lastSurveyDate; }
     public void setLastSurveyDate(LocalDate lastSurveyDate) { this.lastSurveyDate = lastSurveyDate; }
 }
