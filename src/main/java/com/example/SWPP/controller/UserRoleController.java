@@ -1,3 +1,4 @@
+
 package com.example.SWPP.controller;
 
 import com.example.SWPP.dto.CreateRolePermissionRequest;
@@ -274,6 +275,8 @@ public class UserRoleController {
             List<String> permissionNames = permissions.stream()
                     .map(RolePermission::getPermissionName)
                     .collect(Collectors.toList());
+            // Thêm ROLE_<roleName> vào danh sách quyền
+            permissionNames.add("ROLE_" + roleEntity.getRoleName());
             logger.info("Fetched permissions for role={}: count={}", role, permissionNames.size());
             return ResponseEntity.ok(permissionNames);
         } catch (Exception e) {
