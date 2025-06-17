@@ -90,6 +90,23 @@ public class SurveyAnswerController {
         }
     }
 
+    @GetMapping(params = "responseId")
+    @PreAuthorize("hasAuthority('VIEW_SURVEYS')")
+    public ResponseEntity<?> getSurveyAnswersByResponseId(@RequestParam Long responseId) {
+        logger.info("Fetching survey answers for response id: {}", responseId);
+        try {
+            List<SurveyAnswer> answers = surveyAnswerService.getSurveyAnswersByResponseId(responseId);
+            List<SurveyAnswerDTO> responseDTOs = answers.stream()
+                    .map(surveyMapper::toSurveyAnswerDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(responseDTOs);
+        } catch (Exception e) {
+            logger.error("Failed to fetch survey answers for responseId={}: {}", responseId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Lấy danh sách câu trả lời thất bại"));
+        }
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('VIEW_SURVEYS')")
     public ResponseEntity<?> getSurveyAnswerById(@PathVariable Long id) {

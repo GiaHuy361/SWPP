@@ -156,6 +156,13 @@ public class SurveyMapper {
             survey.setId(dto.getSurveyId());
             entity.setSurvey(survey);
         }
+        if (dto.getAnswers() != null) {
+            List<SurveyAnswer> answers = dto.getAnswers().stream()
+                    .map(this::toSurveyAnswerEntity)
+                    .collect(Collectors.toList());
+            answers.forEach(answer -> answer.setResponse(entity));
+            entity.setAnswers(answers);
+        }
         return entity;
     }
 
@@ -168,6 +175,11 @@ public class SurveyMapper {
         dto.setSubmittedAt(entity.getSubmittedAt());
         dto.setTotalScore(entity.getTotalScore());
         dto.setRiskLevel(entity.getRiskLevel());
+        if (entity.getAnswers() != null) {
+            dto.setAnswers(entity.getAnswers().stream()
+                    .map(this::toSurveyAnswerDTO)
+                    .collect(Collectors.toList()));
+        }
         return dto;
     }
 
@@ -176,6 +188,7 @@ public class SurveyMapper {
         SurveyAnswer entity = new SurveyAnswer();
         entity.setId(dto.getId());
         entity.setOptionIds(dto.getOptionIds());
+        entity.setScore(dto.getScore() != null ? dto.getScore() : 0);
         if (dto.getQuestionId() != null) {
             SurveyQuestion question = new SurveyQuestion();
             question.setId(dto.getQuestionId());
@@ -185,6 +198,11 @@ public class SurveyMapper {
             SurveyResponse response = new SurveyResponse();
             response.setId(dto.getResponseId());
             entity.setResponse(response);
+        }
+        if (dto.getOptionId() != null) {
+            SurveyOption option = new SurveyOption();
+            option.setId(dto.getOptionId());
+            entity.setOption(option);
         }
         return entity;
     }
@@ -197,6 +215,7 @@ public class SurveyMapper {
         dto.setQuestionId(entity.getQuestion() != null ? entity.getQuestion().getId() : null);
         dto.setOptionId(entity.getOption() != null ? entity.getOption().getId() : null);
         dto.setOptionIds(entity.getOptionIds());
+        dto.setScore(entity.getScore());
         return dto;
     }
 }

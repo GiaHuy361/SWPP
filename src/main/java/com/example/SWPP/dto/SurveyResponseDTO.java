@@ -1,6 +1,7 @@
 package com.example.SWPP.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class SurveyResponseDTO {
     private Long id;
@@ -9,6 +10,7 @@ public class SurveyResponseDTO {
     private LocalDateTime submittedAt;
     private Integer totalScore;
     private String riskLevel;
+    private List<SurveyAnswerDTO> answers;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -23,4 +25,6 @@ public class SurveyResponseDTO {
     public void setTotalScore(Integer totalScore) { this.totalScore = totalScore; }
     public String getRiskLevel() { return riskLevel; }
     public void setRiskLevel(String riskLevel) { this.riskLevel = riskLevel; }
+    public List<SurveyAnswerDTO> getAnswers() { return answers; }
+    public void setAnswers(List<SurveyAnswerDTO> answers) { this.answers = answers; }
 }

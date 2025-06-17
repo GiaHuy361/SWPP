@@ -68,9 +68,8 @@ public class SurveyResponseController {
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
+            responseDTO.setUserId(user.getUserId());
             SurveyResponse response = surveyMapper.toSurveyResponseEntity(responseDTO);
-            response.setUser(user);
-            logger.debug("Mapped response: surveyId={}, userId={}", response.getSurvey().getId(), response.getUser().getUserId());
             SurveyResponse createdResponse = surveyResponseService.createSurveyResponse(response);
             SurveyResponseDTO responseDTOOut = surveyMapper.toSurveyResponseDTO(createdResponse);
             logger.info("Survey response created successfully: id={}", createdResponse.getId());
@@ -139,9 +138,8 @@ public class SurveyResponseController {
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
+            responseDTO.setUserId(user.getUserId());
             SurveyResponse response = surveyMapper.toSurveyResponseEntity(responseDTO);
-            response.setUser(user);
-            logger.debug("Mapped update response: surveyId={}, userId={}", response.getSurvey().getId(), response.getUser().getUserId());
             SurveyResponse updatedResponse = surveyResponseService.updateSurveyResponse(id, response);
             SurveyResponseDTO responseDTOOut = surveyMapper.toSurveyResponseDTO(updatedResponse);
             logger.info("Survey response updated successfully: id={}", updatedResponse.getId());
