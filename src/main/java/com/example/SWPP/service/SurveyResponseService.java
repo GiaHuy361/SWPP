@@ -23,6 +23,7 @@ public class SurveyResponseService {
     private final SurveyOptionRepository surveyOptionRepository;
     private final UserRepository userRepository;
     private final SurveyRepository surveyRepository;
+    private final UserProfileService userProfileService;
     private final ObjectMapper objectMapper;
 
     public SurveyResponseService(SurveyResponseRepository surveyResponseRepository,
@@ -30,13 +31,15 @@ public class SurveyResponseService {
                                  SurveyQuestionRepository surveyQuestionRepository,
                                  SurveyOptionRepository surveyOptionRepository,
                                  UserRepository userRepository,
-                                 SurveyRepository surveyRepository) {
+                                 SurveyRepository surveyRepository,
+                                 UserProfileService userProfileService) {
         this.surveyResponseRepository = surveyResponseRepository;
         this.surveyAnswerRepository = surveyAnswerRepository;
         this.surveyQuestionRepository = surveyQuestionRepository;
         this.surveyOptionRepository = surveyOptionRepository;
         this.userRepository = userRepository;
         this.surveyRepository = surveyRepository;
+        this.userProfileService = userProfileService;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -143,11 +146,18 @@ public class SurveyResponseService {
             response.setRiskLevel(riskLevel.isEmpty() ? "No Risk Level" : riskLevel);
             surveyResponseRepository.save(response);
 
+            // Đồng bộ với UserProfile
+            userProfileService.updateSurveyResult(response.getUser().getUserId(), response, response.getSurvey());
+
             return Map.of("totalScore", totalScore, "maxScore", surveyType.getMaxScore(), "riskLevel", response.getRiskLevel());
         } catch (Exception e) {
             logger.error("Error parsing riskThresholds for surveyTypeId={}: {}", surveyType.getId(), e.getMessage());
             response.setRiskLevel("No Risk Level");
             surveyResponseRepository.save(response);
+
+            // Đồng bộ với UserProfile ngay cả khi có lỗi
+            userProfileService.updateSurveyResult(response.getUser().getUserId(), response, response.getSurvey());
+
             return Map.of("totalScore", totalScore, "maxScore", surveyType.getMaxScore(), "riskLevel", "No Risk Level");
         }
     }

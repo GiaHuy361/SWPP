@@ -107,6 +107,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/surveys/responses/{id}").hasAuthority("MANAGE_SURVEYS")
                         .requestMatchers(HttpMethod.GET, "/api/surveys/responses/result/{responseId}").hasAuthority("VIEW_SURVEYS")
                         .requestMatchers(HttpMethod.GET, "/api/surveys/responses/user").hasAuthority("VIEW_SURVEYS")
+                        // API hồ sơ người dùng (UserProfile)
+                        .requestMatchers(HttpMethod.POST, "/api/profiles/{userId}").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/profiles/{userId}").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/profiles/{userId}").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/profiles/{userId}").hasRole("Admin")
                         // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )

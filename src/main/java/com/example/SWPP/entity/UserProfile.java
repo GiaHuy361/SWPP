@@ -1,7 +1,9 @@
+
 package com.example.SWPP.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import java.time.LocalDate;
 
 @Entity
@@ -22,12 +24,12 @@ public class UserProfile {
     private User user;
 
     @NotNull
+    @PastOrPresent
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "gender", length = 20, nullable = false)
+    @Column(name = "gender", length = 20)
     private Gender gender;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,7 +40,7 @@ public class UserProfile {
     private Integer lastSurveyScore;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "last_survey_risk_level", length = 50)
+    @Column(name = "last_survey_risk_level", length = 20)
     private RiskLevel lastSurveyRiskLevel;
 
     @Column(name = "last_survey_date")
@@ -54,7 +56,6 @@ public class UserProfile {
 
     public UserProfile() {}
 
-    // Getters and Setters
     public Long getProfileId() { return profileId; }
     public void setProfileId(Long profileId) { this.profileId = profileId; }
     public Long getUserId() { return userId; }

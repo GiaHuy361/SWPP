@@ -71,7 +71,10 @@ public class SurveyResponseController {
             responseDTO.setUserId(user.getUserId());
             SurveyResponse response = surveyMapper.toSurveyResponseEntity(responseDTO);
             SurveyResponse createdResponse = surveyResponseService.createSurveyResponse(response);
+            Map<String, Object> result = surveyResponseService.calculateScore(createdResponse.getId());
             SurveyResponseDTO responseDTOOut = surveyMapper.toSurveyResponseDTO(createdResponse);
+            responseDTOOut.setTotalScore((Integer) result.get("totalScore"));
+            responseDTOOut.setRiskLevel((String) result.get("riskLevel"));
             logger.info("Survey response created successfully: id={}", createdResponse.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(responseDTOOut);
         } catch (IllegalArgumentException e) {
@@ -162,7 +165,7 @@ public class SurveyResponseController {
         try {
             surveyResponseService.deleteSurveyResponse(id);
             logger.info("Survey response deleted successfully: id={}", id);
-            return ResponseEntity.ok(Map.of("message", "Xóa phản hồi thành công"));
+            return ResponseEntity.ok(Map.of("message", ""));
         } catch (RuntimeException e) {
             logger.warn("Survey response not found for deletion: {}", id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
