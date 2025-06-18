@@ -128,9 +128,6 @@ public class UserProfileController {
             UserProfile userProfile = new UserProfile();
             userProfile.setDateOfBirth(request.getDateOfBirth());
             userProfile.setGender(request.getGender());
-            userProfile.setLastSurveyScore(request.getLastSurveyScore());
-            userProfile.setLastSurveyRiskLevel(request.getLastSurveyRiskLevel());
-            userProfile.setLastSurveyDate(request.getLastSurveyDate());
             UserProfile updatedProfile = userProfileService.updateUserProfile(
                     userId,
                     userProfile,

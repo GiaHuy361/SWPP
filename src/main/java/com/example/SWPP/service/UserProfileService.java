@@ -1,4 +1,3 @@
-
 package com.example.SWPP.service;
 
 import com.example.SWPP.entity.Survey;
@@ -69,25 +68,13 @@ public class UserProfileService {
         }
         userRepository.save(user);
 
-        // Cập nhật UserProfile
+        // Cập nhật UserProfile (chỉ dateOfBirth và gender)
         if (updatedProfile.getDateOfBirth() != null) {
             existingProfile.setDateOfBirth(updatedProfile.getDateOfBirth());
         }
         existingProfile.setGender(updatedProfile.getGender());
-        if (updatedProfile.getLastSurveyScore() != null) {
-            existingProfile.setLastSurveyScore(updatedProfile.getLastSurveyScore());
-        }
-        if (updatedProfile.getLastSurveyRiskLevel() != null) {
-            existingProfile.setLastSurveyRiskLevel(updatedProfile.getLastSurveyRiskLevel());
-        }
-        if (updatedProfile.getLastSurveyDate() != null) {
-            existingProfile.setLastSurveyDate(updatedProfile.getLastSurveyDate());
-        }
-        if (updatedProfile.getLastSurvey() != null) {
-            Survey survey = surveyRepository.findById(updatedProfile.getLastSurvey().getId())
-                    .orElseThrow(() -> new RuntimeException("Khảo sát không tồn tại"));
-            existingProfile.setLastSurvey(survey);
-        }
+        // Không cập nhật lastSurveyScore, lastSurveyRiskLevel, lastSurveyDate, lastSurvey từ updatedProfile
+
         return userProfileRepository.save(existingProfile);
     }
 
