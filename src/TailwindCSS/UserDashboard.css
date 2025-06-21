@@ -1,0 +1,15 @@
+.dashboard-container {
+  @apply min-h-screen bg-[#f5faff] flex items-center justify-center;
+}
+.dashboard-card {
+  @apply bg-white p-10 rounded-xl shadow-md w-full max-w-xl text-center;
+}
+.dashboard-title {
+  @apply text-3xl font-bold text-[#1976d2] mb-2;
+}
+.dashboard-sub {
+  @apply text-[#1976d2] mb-1;
+}
+.dashboard-role-info {
+  @apply text-left mt-4 text-sm text-gray-700;
+}

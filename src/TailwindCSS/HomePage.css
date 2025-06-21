@@ -1,0 +1,12 @@
+.home-container {
+  @apply min-h-screen bg-[#f5faff] flex flex-col justify-center items-center py-10 space-y-6;
+}
+.home-title {
+  @apply text-4xl font-bold text-[#1976d2];
+}
+.home-subtitle {
+  @apply text-lg text-[#1976d2] max-w-xl text-center;
+}
+.home-cta {
+  @apply mt-4 px-6 py-3 bg-[#43b649] text-white rounded-xl hover:bg-[#3aa640];
+}

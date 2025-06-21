@@ -1,0 +1,18 @@
+.role-container {
+  @apply min-h-screen bg-[#f5faff] flex items-center justify-center;
+}
+.role-card {
+  @apply bg-white p-8 rounded-xl shadow-md w-full max-w-2xl;
+}
+.role-title {
+  @apply text-2xl font-bold mb-4 text-center text-[#1976d2];
+}
+.role-error {
+  @apply text-red-500 text-sm mb-2;
+}
+.role-list {
+  @apply list-disc pl-6;
+}
+.role-item {
+  @apply mb-2 text-gray-700;
+}

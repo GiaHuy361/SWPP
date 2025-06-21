@@ -1,0 +1,25 @@
+/* EditUserPage.css */
+.loader {
+    animation: spin 1s linear infinite;
+    border-top-color: #3498db;
+}
+  
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.edit-user-form input:focus,
+.edit-user-form select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.edit-user-form label {
+    display: block;
+    margin-bottom: 4px;
+}
