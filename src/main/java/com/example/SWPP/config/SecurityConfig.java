@@ -122,7 +122,53 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/appointments").hasAnyAuthority("BOOK_APPOINTMENTS", "MANAGE_APPOINTMENTS")
                         .requestMatchers(HttpMethod.GET, "/api/appointments/{id}").hasAnyAuthority("BOOK_APPOINTMENTS", "MANAGE_APPOINTMENTS")
                         .requestMatchers(HttpMethod.PUT, "/api/appointments/{id}").hasAuthority("MANAGE_APPOINTMENTS")
-                        .requestMatchers(HttpMethod.DELETE, "/api/appointments/{id}").hasAnyAuthority("MANAGE_APPOINTMENTS", "ROLE_Admin")
+                        .requestMatchers(HttpMethod.DELETE, "/api/appointments/{id}").hasAnyAuthority("MANAGE_APPOINTMENTS", "ROLE_Admin")// API khóa học
+                        .requestMatchers(HttpMethod.GET, "/api/courses", "/api/courses/**").hasAuthority("VIEW_COURSES")
+                        .requestMatchers(HttpMethod.POST, "/api/courses").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.PUT, "/api/courses/**").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.DELETE, "/api/courses/**").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.POST, "/api/courses/*/enroll").hasAuthority("ENROLL_COURSES")
+                        .requestMatchers(HttpMethod.GET, "/api/courses/recommendations").hasAuthority("VIEW_COURSES")
+                        // API module khóa học
+                        .requestMatchers(HttpMethod.GET, "/api/courses/*/modules").hasAuthority("VIEW_COURSES")
+                        .requestMatchers(HttpMethod.POST, "/api/courses/*/modules").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.PUT, "/api/courses/*/modules/**").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.DELETE, "/api/courses/*/modules/**").hasAuthority("MANAGE_COURSES")
+                        // API lesson khóa học
+                        .requestMatchers(HttpMethod.GET, "/api/modules/*/lessons").hasAuthority("VIEW_COURSES")
+                        .requestMatchers(HttpMethod.POST, "/api/modules/*/lessons").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.PUT, "/api/modules/*/lessons/**").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.DELETE, "/api/modules/*/lessons/**").hasAuthority("MANAGE_COURSES")
+                        // API quiz khóa học
+                        .requestMatchers(HttpMethod.GET, "/api/courses/*/quizzes").hasAuthority("VIEW_COURSES")
+                        .requestMatchers(HttpMethod.POST, "/api/courses/*/quizzes").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.PUT, "/api/courses/*/quizzes/**").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.DELETE, "/api/courses/*/quizzes/**").hasAuthority("MANAGE_COURSES")
+                        // API question của quiz
+                        .requestMatchers(HttpMethod.GET, "/api/quizzes/*/questions").hasAuthority("VIEW_COURSES")
+                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/questions").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.PUT, "/api/quizzes/*/questions/**").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.DELETE, "/api/quizzes/*/questions/**").hasAuthority("MANAGE_COURSES")
+                        // API answer của question
+                        .requestMatchers(HttpMethod.GET, "/api/questions/*/answers").hasAuthority("VIEW_COURSES")
+                        .requestMatchers(HttpMethod.POST, "/api/questions/*/answers").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.PUT, "/api/questions/*/answers/**").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.DELETE, "/api/questions/*/answers/**").hasAuthority("MANAGE_COURSES")
+                        // API submission của quiz
+                        .requestMatchers(HttpMethod.POST, "/api/quizzes/*/submissions").hasAuthority("SUBMIT_QUIZ")
+                        .requestMatchers(HttpMethod.GET, "/api/quizzes/*/submissions").hasAuthority("VIEW_PROGRESS")
+                        // API answer của submission
+                        .requestMatchers(HttpMethod.POST, "/api/submissions/*/questions/*/answers/*").hasAuthority("SUBMIT_QUIZ")
+                        .requestMatchers(HttpMethod.DELETE, "/api/submissions/*/questions/*/answers/**").hasAuthority("MANAGE_COURSES")
+                        // API certificate
+                        .requestMatchers(HttpMethod.POST, "/api/enrollments/*/certificates").hasAuthority("MANAGE_COURSES")
+                        .requestMatchers(HttpMethod.GET, "/api/enrollments/*/certificates").hasAuthority("VIEW_CERTIFICATES")
+                        // API tiến độ học viên
+                        .requestMatchers(HttpMethod.POST, "/api/progress/lessons/*/complete").hasAuthority("COMPLETE_LESSON")
+                        .requestMatchers(HttpMethod.GET, "/api/progress/courses/*").hasAuthority("VIEW_PROGRESS")
+                        // API ghi danh
+                        .requestMatchers(HttpMethod.POST, "/api/enrollments/courses/*").hasAuthority("ENROLL_COURSES")
+                        .requestMatchers(HttpMethod.GET, "/api/enrollments/user").hasAuthority("VIEW_COURSES")
                         // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )
