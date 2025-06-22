@@ -30,14 +30,13 @@ public class ConsultantService {
 
     public Consultant createConsultant(Long userId, String qualification, Integer experienceYears) {
         logger.info("Creating consultant: userId={}, qualification={}, experienceYears={}", userId, qualification, experienceYears);
-        checkAuthority("MANAGE_CONSULTANTS"); // Chỉ Admin và Manager có quyền này
+        checkAuthority("MANAGE_CONSULTANTS");
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
         if (user.getRole() == null) {
             logger.error("User with ID {} has no role assigned", userId);
             throw new IllegalStateException("Người dùng không có vai trò được gán");
         }
-        // Không kiểm tra vai trò Consultant, để Admin/Manager tạo cho bất kỳ user
         Consultant consultant = new Consultant();
         consultant.setUser(user);
         consultant.setQualification(qualification);
@@ -64,6 +63,9 @@ public class ConsultantService {
         Consultant consultant = consultantRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Tư vấn viên không tồn tại"));
         User user = consultant.getUser();
+        if (user == null) {
+            throw new IllegalStateException("Người dùng liên kết với tư vấn viên không tồn tại");
+        }
 
         if (qualification != null) consultant.setQualification(qualification);
         if (experienceYears != null) consultant.setExperienceYears(experienceYears);

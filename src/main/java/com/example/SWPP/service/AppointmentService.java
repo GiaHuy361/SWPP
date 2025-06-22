@@ -1,5 +1,7 @@
 package com.example.SWPP.service;
 
+import com.example.SWPP.dto.AppointmentDTO;
+import com.example.SWPP.dto.UpdateAppointmentRequest;
 import com.example.SWPP.entity.Appointment;
 import com.example.SWPP.entity.Consultant;
 import com.example.SWPP.entity.User;
@@ -17,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AppointmentService {
@@ -69,57 +72,62 @@ public class AppointmentService {
     }
 
     // Read: Lấy tất cả lịch hẹn
-    public List<Appointment> getAllAppointments() {
+    public List<AppointmentDTO> getAllAppointments() {
         logger.info("Fetching all appointments");
         checkAuthority("MANAGE_APPOINTMENTS");
-        return appointmentRepository.findAll();
+        return appointmentRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     // Read: Lấy lịch hẹn theo ID
-    public Optional<Appointment> getAppointmentById(Long id) {
+    public Optional<AppointmentDTO> getAppointmentById(Long id) {
         logger.info("Fetching appointment by id: {}", id);
         checkAuthority("MANAGE_APPOINTMENTS");
-        return appointmentRepository.findById(id);
+        return appointmentRepository.findById(id).map(this::mapToDTO);
     }
 
     // Read: Lấy lịch hẹn của tư vấn viên
-    public List<Appointment> getAppointmentsByConsultantId(Long consultantId) {
+    public List<AppointmentDTO> getAppointmentsByConsultantId(Long consultantId) {
         logger.info("Fetching appointments for consultantId: {}", consultantId);
         checkAuthority("MANAGE_APPOINTMENTS");
-        return appointmentRepository.findByConsultantId(consultantId);
+        return appointmentRepository.findByConsultantId(consultantId).stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     // Read: Lấy lịch hẹn của người dùng
-    public List<Appointment> getAppointmentsByUserId(Long userId) {
+    public List<AppointmentDTO> getAppointmentsByUserId(Long userId) {
         logger.info("Fetching appointments for userId: {}", userId);
         checkAuthority("BOOK_APPOINTMENTS");
-        return appointmentRepository.findByUserId(userId);
+        return appointmentRepository.findByUserId(userId).stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     // Update: Cập nhật lịch hẹn
-    public Appointment updateAppointment(Long id, Appointment updatedAppointment) {
+    public AppointmentDTO updateAppointment(Long id, UpdateAppointmentRequest request) {
         logger.info("Updating appointment: id={}", id);
         checkAuthority("MANAGE_APPOINTMENTS");
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Lịch hẹn không tồn tại"));
 
-        if (updatedAppointment.getAppointmentTime() != null) {
-            if (updatedAppointment.getAppointmentTime().isBefore(LocalDateTime.now())) {
+        if (request.getAppointmentTime() != null) {
+            if (request.getAppointmentTime().isBefore(LocalDateTime.now())) {
                 throw new IllegalArgumentException("Không thể cập nhật lịch quá khứ");
             }
-            appointment.setAppointmentTime(updatedAppointment.getAppointmentTime());
+            if (appointmentRepository.findByConsultantIdAndAppointmentTime(
+                    appointment.getConsultant().getConsultantId(), request.getAppointmentTime()).isPresent()) {
+                throw new IllegalStateException("Tư vấn viên đã có lịch hẹn vào thời gian này");
+            }
+            appointment.setAppointmentTime(request.getAppointmentTime());
         }
-        if (updatedAppointment.getStatus() != null) {
-            appointment.setStatus(updatedAppointment.getStatus());
+        if (request.getStatus() != null) {
+            appointment.setStatus(request.getStatus());
             if (appointment.getStatus() == Appointment.Status.CONFIRMED && appointment.getMeetLink() == null) {
                 appointment.setMeetLink(generateGoogleMeetLink());
                 sendConfirmationEmail(appointment);
             }
         }
-        if (updatedAppointment.getMeetLink() != null) {
-            appointment.setMeetLink(updatedAppointment.getMeetLink());
+        if (request.getMeetLink() != null) {
+            appointment.setMeetLink(request.getMeetLink());
         }
-        return appointmentRepository.save(appointment);
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+        return mapToDTO(savedAppointment);
     }
 
     // Delete: Xóa lịch hẹn
@@ -129,6 +137,22 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Lịch hẹn không tồn tại"));
         appointmentRepository.delete(appointment);
+    }
+
+    private AppointmentDTO mapToDTO(Appointment appointment) {
+        AppointmentDTO dto = new AppointmentDTO();
+        dto.setAppointmentId(appointment.getAppointmentId());
+        dto.setUserId(appointment.getUser().getUserId());
+        dto.setUserFullName(appointment.getUser().getFullName());
+        dto.setUserEmail(appointment.getUser().getEmail());
+        dto.setConsultantId(appointment.getConsultant().getConsultantId());
+        dto.setConsultantFullName(appointment.getConsultant().getUser().getFullName());
+        dto.setConsultantEmail(appointment.getConsultant().getUser().getEmail());
+        dto.setAppointmentTime(appointment.getAppointmentTime());
+        dto.setStatus(appointment.getStatus());
+        dto.setMeetLink(appointment.getMeetLink());
+        dto.setCreatedAt(appointment.getCreatedAt());
+        return dto;
     }
 
     private String generateGoogleMeetLink() {

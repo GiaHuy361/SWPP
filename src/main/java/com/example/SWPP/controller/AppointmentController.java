@@ -1,5 +1,6 @@
 package com.example.SWPP.controller;
 
+import com.example.SWPP.dto.AppointmentDTO;
 import com.example.SWPP.dto.CreateAppointmentRequest;
 import com.example.SWPP.dto.UpdateAppointmentRequest;
 import com.example.SWPP.entity.Appointment;
@@ -65,8 +66,7 @@ public class AppointmentController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Chưa xác thực"));
             }
-            String currentUserEmail = authentication.getName();
-            List<Appointment> appointments = appointmentService.getAllAppointments();
+            List<AppointmentDTO> appointments = appointmentService.getAllAppointments();
             return ResponseEntity.ok(appointments);
         } catch (Exception e) {
             logger.error("Failed to fetch all appointments: {}", e.getMessage());
@@ -86,12 +86,12 @@ public class AppointmentController {
                         .body(Map.of("message", "Chưa xác thực"));
             }
             String currentUserEmail = authentication.getName();
-            Appointment appointment = appointmentService.getAppointmentById(id)
+            AppointmentDTO appointment = appointmentService.getAppointmentById(id)
                     .orElseThrow(() -> new RuntimeException("Lịch hẹn không tồn tại"));
             // Kiểm tra quyền truy cập
             boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"));
-            boolean isConsultant = appointment.getConsultant().getUser().getEmail().equals(currentUserEmail);
-            boolean isUser = appointment.getUser().getEmail().equals(currentUserEmail);
+            boolean isConsultant = appointment.getConsultantEmail().equals(currentUserEmail);
+            boolean isUser = appointment.getUserEmail().equals(currentUserEmail);
             if (!isAdmin && !isConsultant && !isUser) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Bạn không có quyền xem lịch hẹn này"));
@@ -110,12 +110,8 @@ public class AppointmentController {
     public ResponseEntity<?> updateAppointment(@PathVariable Long id, @Valid @RequestBody UpdateAppointmentRequest request) {
         logger.info("Updating appointment: id={}, status={}", id, request.getStatus());
         try {
-            Appointment updatedAppointment = new Appointment();
-            updatedAppointment.setAppointmentTime(request.getAppointmentTime());
-            updatedAppointment.setStatus(request.getStatus());
-            updatedAppointment.setMeetLink(request.getMeetLink());
-            Appointment appointment = appointmentService.updateAppointment(id, updatedAppointment);
-            return ResponseEntity.ok(Map.of("appointmentId", appointment.getAppointmentId(), "message", "Cập nhật thành công"));
+            AppointmentDTO updatedAppointment = appointmentService.updateAppointment(id, request);
+            return ResponseEntity.ok(Map.of("appointmentId", updatedAppointment.getAppointmentId(), "message", "Cập nhật thành công"));
         } catch (Exception e) {
             logger.error("Failed to update appointment: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
