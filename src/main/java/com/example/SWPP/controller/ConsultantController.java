@@ -1,5 +1,6 @@
 package com.example.SWPP.controller;
 
+import com.example.SWPP.dto.ConsultantDTO;
 import com.example.SWPP.dto.CreateConsultantRequest;
 import com.example.SWPP.dto.UpdateConsultantRequest;
 import com.example.SWPP.entity.Consultant;
@@ -53,7 +54,7 @@ public class ConsultantController {
     public ResponseEntity<?> getAllConsultants() {
         logger.info("Fetching all consultants");
         try {
-            List<Consultant> consultants = consultantService.getAllConsultants();
+            List<ConsultantDTO> consultants = consultantService.getAllConsultants();
             return ResponseEntity.ok(consultants);
         } catch (Exception e) {
             logger.error("Failed to fetch all consultants: {}", e.getMessage());
@@ -68,7 +69,7 @@ public class ConsultantController {
     public ResponseEntity<?> getConsultantById(@PathVariable Long id) {
         logger.info("Fetching consultant by id: {}", id);
         try {
-            Consultant consultant = consultantService.getConsultantById(id)
+            ConsultantDTO consultant = consultantService.getConsultantById(id)
                     .orElseThrow(() -> new RuntimeException("Tư vấn viên không tồn tại"));
             return ResponseEntity.ok(consultant);
         } catch (Exception e) {
@@ -85,7 +86,7 @@ public class ConsultantController {
         logger.info("Updating consultant: id={}, qualification={}, experienceYears={}, isActive={}, fullName={}, email={}, phone={}",
                 id, request.getQualification(), request.getExperienceYears(), request.getIsActive(), request.getFullName(), request.getEmail(), request.getPhone());
         try {
-            Consultant consultant = consultantService.updateConsultant(
+            ConsultantDTO consultant = consultantService.updateConsultant(
                     id,
                     request.getQualification(),
                     request.getExperienceYears(),

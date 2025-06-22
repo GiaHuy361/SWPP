@@ -1,5 +1,6 @@
 package com.example.SWPP.service;
 
+import com.example.SWPP.dto.ConsultantDTO;
 import com.example.SWPP.entity.Consultant;
 import com.example.SWPP.entity.User;
 import com.example.SWPP.repository.ConsultantRepository;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ConsultantService {
@@ -44,19 +46,19 @@ public class ConsultantService {
         return consultantRepository.save(consultant);
     }
 
-    public List<Consultant> getAllConsultants() {
+    public List<ConsultantDTO> getAllConsultants() {
         logger.info("Fetching all consultants");
         checkAuthority("MANAGE_CONSULTANTS");
-        return consultantRepository.findAll();
+        return consultantRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    public Optional<Consultant> getConsultantById(Long id) {
+    public Optional<ConsultantDTO> getConsultantById(Long id) {
         logger.info("Fetching consultant by id: {}", id);
         checkAuthority("MANAGE_CONSULTANTS");
-        return consultantRepository.findById(id);
+        return consultantRepository.findById(id).map(this::mapToDTO);
     }
 
-    public Consultant updateConsultant(Long id, String qualification, Integer experienceYears, Boolean isActive, String fullName, String email, String phone) {
+    public ConsultantDTO updateConsultant(Long id, String qualification, Integer experienceYears, Boolean isActive, String fullName, String email, String phone) {
         logger.info("Updating consultant: id={}, qualification={}, experienceYears={}, isActive={}, fullName={}, email={}, phone={}",
                 id, qualification, experienceYears, isActive, fullName, email, phone);
         checkAuthority("MANAGE_CONSULTANTS");
@@ -80,7 +82,8 @@ public class ConsultantService {
         if (phone != null) user.setPhone(phone);
         consultant.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-        return consultantRepository.save(consultant);
+        Consultant savedConsultant = consultantRepository.save(consultant);
+        return mapToDTO(savedConsultant);
     }
 
     public void deleteConsultant(Long id) {
@@ -89,6 +92,21 @@ public class ConsultantService {
         Consultant consultant = consultantRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Tư vấn viên không tồn tại"));
         consultantRepository.delete(consultant);
+    }
+
+    private ConsultantDTO mapToDTO(Consultant consultant) {
+        ConsultantDTO dto = new ConsultantDTO();
+        dto.setConsultantId(consultant.getConsultantId());
+        dto.setUserId(consultant.getUser().getUserId());
+        dto.setFullName(consultant.getUser().getFullName());
+        dto.setEmail(consultant.getUser().getEmail());
+        dto.setPhone(consultant.getUser().getPhone());
+        dto.setQualification(consultant.getQualification());
+        dto.setExperienceYears(consultant.getExperienceYears());
+        dto.setIsActive(consultant.getIsActive());
+        dto.setCreatedAt(consultant.getCreatedAt());
+        dto.setUpdatedAt(consultant.getUpdatedAt());
+        return dto;
     }
 
     private void checkAuthority(String requiredAuthority) {
