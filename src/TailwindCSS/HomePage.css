@@ -1,0 +1,12 @@
+.home-container {
+  @apply min-h-screen bg-[#f0f0f0] flex flex-col justify-center items-center py-10 space-y-8;
+}
+.home-title {
+  @apply text-5xl font-bold text-[#2c3e50] mb-2;
+}
+.home-subtitle {
+  @apply text-xl text-[#34495e] max-w-xl text-center leading-relaxed;
+}
+.home-cta {
+  @apply mt-6 px-8 py-4 bg-[#536878] text-white rounded-lg hover:bg-[#455a64] text-xl font-medium border-2 border-[#455a64];
+}

@@ -1,0 +1,264 @@
+.header {
+  background: linear-gradient(135deg, #e3f6fc 60%, #f5faff 100%);
+  border-bottom: 1.5px solid #e3eaf3;
+  box-shadow: 0 2px 12px #b3e5fc33;
+  padding: 0 0;
+  width: 100vw;
+  min-width: 100vw;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.header-logo {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #1976d2;
+  text-shadow: 0 2px 8px #b3e5fc33;
+  padding: 0 32px;
+}
+
+.header-nav {
+  display: flex;
+  gap: 24px;
+}
+
+.header-link {
+  color: #1976d2;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background 0.18s, color 0.18s;
+}
+
+.header-link:hover, .header-link.active {
+  background: #e3f6fc;
+  color: #43b649;
+}
+
+.header-user {
+  padding: 0 32px;
+}
+
+.horizontal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #16181d;
+  padding: 14px 28px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid #292b31;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.horizontal-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-logo {
+  width: 40px;
+  height: 40px;
+}
+
+.sidebar-title {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 3px #000;
+  transition: transform 0.2s ease;
+}
+.sidebar-title:hover {
+  transform: scale(1.04);
+}
+
+.horizontal-links {
+  display: flex;
+  gap: 18px;
+}
+
+.horizontal-link {
+  color: #ccc;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: color 0.2s, background-color 0.2s;
+}
+.horizontal-link:hover {
+  background-color: #22252a;
+  color: #fff;
+}
+.horizontal-link.active {
+  color: #00c2ff;
+  font-weight: 600;
+}
+
+/* --- User/Login area --- */
+.header-login {
+  margin-left: auto;
+  position: relative;
+}
+
+.login-button {
+  background-color: #00c2ff;
+  color: #000;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+.login-button:hover {
+  background-color: #00a2db;
+  color: #fff;
+}
+
+.user-menu-wrapper {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 8px;
+  position: relative;
+}
+
+.user-avatar-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-image {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #00c2ff;
+}
+
+.user-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #f5f5f5;
+}
+
+/* Dropdown */
+.user-dropdown {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  background-color: #1d1f25;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 10px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  z-index: 1001;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 10px 16px;
+  color: #eee;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+.dropdown-item:hover {
+  background-color: #292d33;
+  color: #00c2ff;
+}
+
+/* Thêm khoảng cách phía dưới header để nội dung không bị đè */
+body {
+  padding-top: 80px; /* Điều chỉnh tùy theo chiều cao của header */
+}
+
+/* Animation cho dropdown */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.group:hover .group-hover\:visible {
+  animation: slideDown 0.3s ease forwards;
+}
+
+/* Hiệu ứng active cho menu item */
+.active-nav-link {
+  color: #1d4ed8; /* blue-700 */
+  font-weight: 600;
+}
+
+/* Hiệu ứng khi scroll */
+.header-scrolled {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* CSS cho spinner trong trang Profile */
+.spinner {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 5px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  animation: spinner 1s linear infinite;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Header styles */
+.dropdown-shadow {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Hiệu ứng chuyển tiếp */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Màu sắc cho các mức độ nguy cơ */
+.risk-high {
+  color: #e53e3e;
+}
+
+.risk-medium {
+  color: #dd6b20;
+}
+
+.risk-low {
+  color: #38a169;
+}
+
+.risk-none {
+  color: #718096;
+}

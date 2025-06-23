@@ -1,0 +1,15 @@
+.register-form {
+  @apply bg-[#f9f9f9] p-10 rounded-lg shadow-md border border-[#d0d0d0] w-full max-w-lg space-y-6;
+}
+.register-input {
+  @apply w-full p-4 border-2 border-[#c0c0c0] rounded-lg text-lg bg-white;
+}
+.register-button {
+  @apply w-full bg-[#4b6584] text-white py-3 rounded-lg hover:bg-[#3d5166] text-xl mt-4 font-medium;
+}
+.register-message {
+  @apply text-[#2d6a4f] text-base font-medium;
+}
+.register-error {
+  @apply text-[#9b2226] text-base font-medium;
+}
