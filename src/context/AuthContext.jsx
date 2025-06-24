@@ -1,219 +1,185 @@
-// src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import apiClient from '../utils/axios';
 import { toast } from 'react-toastify';
-import { useGoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
 
-// Tạo context với giá trị mặc định
-const AuthContext = createContext({
-  user: null,
-  isAuthenticated: false,
-  loading: true,
-  error: null,
-  login: () => {},
-  logout: () => {},
-  handleGoogleLogin: () => {},
-  setError: () => {}
-});
+export const AuthContext = createContext();
 
-// Provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const authChecked = useRef(false);
 
-  // Kiểm tra trạng thái xác thực khi component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Kiểm tra localStorage xem có token hay không
-        const token = localStorage.getItem('token');
-        const userData = localStorage.getItem('user');
-        
-        if (token && userData) {
-          setUser(JSON.parse(userData));
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Lỗi khi kiểm tra xác thực:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  // Hàm đăng nhập
-  const login = async (email, password) => {
-    try {
-      // Mô phỏng API call đến backend
-      // Trong thực tế, bạn cần thay thế bằng API call thực sự
-      if (email === 'admin@example.com' && password === 'password') {
-        const userData = {
-          id: '1',
-          email: email,
-          fullName: 'Admin User',
-          role: 'Admin'
-        };
-        
-        // Lưu thông tin vào localStorage
-        localStorage.setItem('token', 'fake-token');
-        localStorage.setItem('user', JSON.stringify(userData));
-        
-        setUser(userData);
-        setIsAuthenticated(true);
-        toast.success('Đăng nhập thành công!');
-        return true;
-      } else {
-        toast.error('Email hoặc mật khẩu không đúng!');
-        return false;
-      }
-    } catch (error) {
-      toast.error('Đăng nhập thất bại. Vui lòng thử lại!');
-      console.error('Lỗi đăng nhập:', error);
-      return false;
-    }
-  };
-
-  // Hàm đăng xuất
-  const logout = async () => {
-    try {
-      // Xóa thông tin xác thực khỏi localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      
-      setUser(null);
-      setIsAuthenticated(false);
-      toast.info('Đã đăng xuất');
-      return true;
-    } catch (error) {
-      console.error('Lỗi đăng xuất:', error);
-      return false;
-    }
-  };
-
-  // Đăng nhập với Google
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        // Lấy thông tin người dùng từ Google API
-        const userInfo = await axios.get(
-          'https://www.googleapis.com/oauth2/v3/userinfo',
-          {
-            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          }
-        );
-
-        // Dữ liệu người dùng sau khi xác thực với Google
-        const userData = {
-          id: userInfo.data.sub,
-          email: userInfo.data.email,
-          fullName: userInfo.data.name,
-          picture: userInfo.data.picture,
-          role: 'User' // Mặc định role là User
-        };
-
-        // Lưu thông tin vào localStorage
-        localStorage.setItem('token', tokenResponse.access_token);
-        localStorage.setItem('user', JSON.stringify(userData));
-
-        setUser(userData);
-        setIsAuthenticated(true);
-        toast.success('Đăng nhập với Google thành công!');
-      } catch (error) {
-        console.error('Lỗi khi đăng nhập với Google:', error);
-        toast.error('Đăng nhập với Google thất bại. Vui lòng thử lại!');
-      }
-    },
-    onError: (error) => {
-      console.error('Lỗi đăng nhập Google:', error);
-      toast.error('Đăng nhập với Google thất bại. Vui lòng thử lại!');
-    }
-  });
-
-  // Thêm hàm checkSession ngay sau hàm useEffect đầu tiên
-  // Hàm này giúp kiểm tra trạng thái session trên server
   const checkSession = async () => {
     try {
-      const response = await apiClient.get('/auth/user');
-      console.log("Session check response:", response.data);
-      return response.data;
+      setLoading(true);
+      const response = await apiClient.get('/auth/user', { withCredentials: true });
+      const userData = response.data;
+      console.log('Session check response:', userData);
+      if (!userData || !userData.userId) {
+        setUser(null);
+        setIsAuthenticated(false);
+      } else {
+        if (!userData.permissions || userData.permissions.length === 0) {
+          console.warn('No permissions in user data, deriving from role:', userData);
+          userData.permissions = derivePermissionsFromRole(userData.role);
+        }
+        console.log('User permissions after derivation:', userData.permissions);
+        setUser(userData);
+        setIsAuthenticated(true);
+      }
     } catch (error) {
-      console.error("Session check failed:", error);
-      return null;
+      console.error('Session check failed:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message
+      });
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Trả về context value
-  const contextValue = {
-    user,
-    isAuthenticated,
-    loading,
-    error,
-    login,
-    logout,
-    handleGoogleLogin,
-    setError,
-    setUser,
-    setIsAuthenticated
+  const derivePermissionsFromRole = (role) => {
+    const rolePermissions = {
+      'Admin': [
+        'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
+        'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS',
+        'VIEW_PARTICIPANTS', 'VIEW_REPORTS', 'VIEW_USER_ACTIVITY', 'MANAGE_BLOGS',
+        'MANAGE_APPOINTMENTS', 'MANAGE_COURSES', 'MANAGE_PROGRAMS', 'MANAGE_PARTICIPANTS',
+        'MANAGE_CONSULTANTS', 'MANAGE_REPORTS', 'MANAGE_USERS', 'MANAGE_FAQ',
+        'MANAGE_ORGANIZATIONS', 'MANAGE_RISK_ASSESSMENTS', 'MANAGE_PERSONAL_PROGRESS',
+        'MANAGE_SURVEYS', 'ROLE_Admin'
+      ],
+      'Consultant': [
+        'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
+        'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS',
+        'VIEW_PARTICIPANTS', 'MANAGE_RISK_ASSESSMENTS', 'MANAGE_APPOINTMENTS', 'ROLE_Consultant'
+      ],
+      'Member': [
+        'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
+        'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS', 'ROLE_Member'
+      ],
+      'Guest': [
+        'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_PROGRAMS', 'ROLE_Guest'
+      ],
+      'Staff': [
+        'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
+        'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS',
+        'VIEW_PARTICIPANTS', 'MANAGE_RISK_ASSESSMENTS', 'MANAGE_COURSES', 'ROLE_Staff'
+      ],
+      'Manager': [
+        'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
+        'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS',
+        'VIEW_PARTICIPANTS', 'VIEW_REPORTS', 'VIEW_USER_ACTIVITY', 'MANAGE_BLOGS',
+        'MANAGE_APPOINTMENTS', 'MANAGE_COURSES', 'MANAGE_PROGRAMS', 'MANAGE_PARTICIPANTS',
+        'MANAGE_CONSULTANTS', 'MANAGE_REPORTS', 'ROLE_Manager'
+      ]
+    };
+    return rolePermissions[role] || [];
+  };
+
+  useEffect(() => {
+    if (authChecked.current) return;
+    authChecked.current = true;
+    checkSession();
+  }, []);
+
+  const login = async (usernameOrEmail, password) => {
+    try {
+      const response = await apiClient.post('/auth/login', { usernameOrEmail, password }, { withCredentials: true });
+      console.log('Login response:', response.data);
+      const user = response.data;
+      if (!user || !user.userId) {
+        console.error('Login response missing user data:', response.data);
+        toast.error('Đăng nhập thất bại: Backend không trả dữ liệu người dùng hợp lệ.');
+        return false;
+      }
+      if (!user.permissions || user.permissions.length === 0) {
+        console.warn('No permissions in login response, deriving from role:', user);
+        user.permissions = derivePermissionsFromRole(user.role);
+      }
+      console.log('User permissions after login:', user.permissions);
+      setUser(user);
+      setIsAuthenticated(true);
+      await checkSession();
+      return true;
+    } catch (error) {
+      console.error('Login error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      toast.error('Đăng nhập thất bại: ' + (error.response?.data?.message || error.message));
+      return false;
+    }
+  };
+
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      const response = await apiClient.post('/auth/login-google', {
+        idToken: credentialResponse.credential
+      }, { withCredentials: true });
+      const user = response.data;
+      console.log('Google login response:', {
+        userId: user.userId,
+        email: user.email,
+        role: user.role,
+        permissions: user.permissions
+      });
+      if (!user || !user.userId) {
+        console.error('Google login response missing user data:', response.data);
+        toast.error('Đăng nhập Google thất bại: Không có dữ liệu người dùng.');
+        return;
+      }
+      // Kiểm tra role và email để tránh nhầm admin
+      if (user.role === 'Admin' || user.email === 'admin1@example.com') { // Thay bằng email admin thực tế
+        console.warn('Google login returned admin data, rejecting:', user);
+        toast.error('Đăng nhập Google thất bại: Tài khoản không hợp lệ.');
+        return;
+      }
+      // Đảm bảo permissions hợp lệ
+      if (!user.permissions || user.permissions.length === 0) {
+        console.warn('No permissions in Google login response, deriving from role:', user);
+        user.permissions = derivePermissionsFromRole(user.role);
+      }
+      console.log('Setting user after Google login:', user);
+      setUser(user);
+      setIsAuthenticated(true);
+      toast.success('Đăng nhập Google thành công!');
+    } catch (error) {
+      console.error('Google login error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      toast.error('Đăng nhập Google thất bại: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await apiClient.post('/auth/logout', {}, { withCredentials: true });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+      toast.success('Đăng xuất thành công.');
+    }
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, handleGoogleLogin, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook để sử dụng AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  // Trả về defaultValue thay vì throw lỗi
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
-};
-
-// Trong LoginPage.jsx, tìm hàm handleLogin và sửa như sau:
-
-const handleLogin = async (e) => {
-  e.preventDefault();
-  
-  // Kiểm tra dữ liệu đầu vào
-  if (!formData.usernameOrEmail) {
-    setError("Vui lòng nhập tên đăng nhập hoặc email");
-    return;
-  }
-  
-  if (!formData.password) {
-    setError("Vui lòng nhập mật khẩu");
-    return;
-  }
-  
-  try {
-    setLoading(true);
-    setError(null);
-    
-    console.log("Đang gửi yêu cầu đăng nhập:", formData);
-    
-    // Gọi hàm login từ AuthContext
-    const userData = await login(formData);
-    
-    // Thành công
-    setLoading(false);
-    console.log("Đăng nhập thành công:", userData);
-    
-    // Chuyển hướng
-    navigate(redirectPath);
-  } catch (error) {
-    setLoading(false);
-    console.error("Lỗi đăng nhập:", error);
-    
-    if (error.response) {
-      const errorMessage = error.response.data?.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
-      setError(errorMessage);
-    } else {
-      setError("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
-    }
-  }
 };

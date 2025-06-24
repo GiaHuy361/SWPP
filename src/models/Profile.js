@@ -1,7 +1,3 @@
-/**
- * Lớp đại diện cho hồ sơ người dùng (Model Class)
- * Thiết kế theo nguyên tắc OOP với thuộc tính private, getter/setter
- */
 class Profile {
   constructor(data = {}) {
     this._profileId = data.profileId || null;
@@ -9,29 +5,21 @@ class Profile {
     this._username = data.username || '';
     this._fullName = data.fullName || '';
     this._email = data.email || '';
-    this._phoneNumber = data.phoneNumber || '';
+    this._phone = data.phone || '';
     this._dateOfBirth = data.dateOfBirth || '';
-    this._gender = data.gender || 'Nam';
-    this._address = data.address || '';
-    this._bio = data.bio || '';
-    this._avatar = data.avatar || null;
+    this._gender = data.gender || '';
     
-    // Thông tin khảo sát
-    this._lastSurveyId = data.lastSurveyId || null;
     this._lastSurveyDate = data.lastSurveyDate || null;
     this._lastSurveyScore = data.lastSurveyScore || null;
     this._lastSurveyRiskLevel = data.lastSurveyRiskLevel || null;
-    this._surveyHistory = data.surveyHistory || []; // Lịch sử làm khảo sát
   }
 
-  // Getters và setters cho ID
   get profileId() { return this._profileId; }
   set profileId(value) { this._profileId = value; }
 
   get userId() { return this._userId; }
   set userId(value) { this._userId = value; }
 
-  // Getters và setters cho thông tin cá nhân
   get username() { return this._username; }
   set username(value) { this._username = value; }
 
@@ -41,27 +29,14 @@ class Profile {
   get email() { return this._email; }
   set email(value) { this._email = value; }
 
-  get phoneNumber() { return this._phoneNumber; }
-  set phoneNumber(value) { this._phoneNumber = value; }
+  get phone() { return this._phone; }
+  set phone(value) { this._phone = value; }
 
   get dateOfBirth() { return this._dateOfBirth; }
   set dateOfBirth(value) { this._dateOfBirth = value; }
 
   get gender() { return this._gender; }
   set gender(value) { this._gender = value; }
-
-  get address() { return this._address; }
-  set address(value) { this._address = value; }
-
-  get bio() { return this._bio; }
-  set bio(value) { this._bio = value; }
-
-  get avatar() { return this._avatar; }
-  set avatar(value) { this._avatar = value; }
-
-  // Getters và setters cho thông tin khảo sát
-  get lastSurveyId() { return this._lastSurveyId; }
-  set lastSurveyId(value) { this._lastSurveyId = value; }
 
   get lastSurveyDate() { return this._lastSurveyDate; }
   set lastSurveyDate(value) { this._lastSurveyDate = value; }
@@ -72,21 +47,10 @@ class Profile {
   get lastSurveyRiskLevel() { return this._lastSurveyRiskLevel; }
   set lastSurveyRiskLevel(value) { this._lastSurveyRiskLevel = value; }
 
-  get surveyHistory() { return this._surveyHistory; }
-  set surveyHistory(value) { this._surveyHistory = value; }
-
-  /**
-   * Kiểm tra người dùng đã từng làm khảo sát chưa
-   * @returns {boolean} true nếu đã từng làm khảo sát
-   */
   hasTakenSurvey() {
-    return this._lastSurveyId !== null;
+    return this._lastSurveyDate !== null;
   }
 
-  /**
-   * Định dạng ngày khảo sát gần nhất
-   * @returns {string} Ngày được định dạng hoặc "Chưa có"
-   */
   getFormattedLastSurveyDate() {
     if (!this._lastSurveyDate) return "Chưa có";
     try {
@@ -96,10 +60,6 @@ class Profile {
     }
   }
 
-  /**
-   * Lấy trạng thái khảo sát của người dùng
-   * @returns {object} Đối tượng chứa thông tin trạng thái khảo sát
-   */
   getSurveyStatus() {
     if (!this.hasTakenSurvey()) {
       return {
@@ -141,10 +101,6 @@ class Profile {
     };
   }
 
-  /**
-   * Chuyển đối tượng Profile thành dạng JSON để gửi API
-   * @returns {Object} Object JSON đại diện cho profile
-   */
   toJSON() {
     return {
       profileId: this._profileId,
@@ -152,34 +108,18 @@ class Profile {
       username: this._username,
       fullName: this._fullName,
       email: this._email,
-      phoneNumber: this._phoneNumber,
+      phone: this._phone,
       dateOfBirth: this._dateOfBirth,
       gender: this._gender,
-      address: this._address,
-      bio: this._bio,
-      avatar: this._avatar,
-      lastSurveyId: this._lastSurveyId,
       lastSurveyDate: this._lastSurveyDate,
       lastSurveyScore: this._lastSurveyScore,
-      lastSurveyRiskLevel: this._lastSurveyRiskLevel,
-      surveyHistory: this._surveyHistory
+      lastSurveyRiskLevel: this._lastSurveyRiskLevel
     };
   }
   
-  /**
-   * Phương thức tĩnh để tạo đối tượng Profile từ dữ liệu API
-   * @param {Object} data Dữ liệu từ API
-   * @returns {Profile} Đối tượng Profile mới
-   */
   static fromJSON(data) {
     return new Profile(data);
   }
 }
 
 export default Profile;
-
-// Thay vì import trực tiếp
-import HeavyComponent from './HeavyComponent';
-
-// Sử dụng dynamic import
-const HeavyComponent = React.lazy(() => import('./HeavyComponent'));

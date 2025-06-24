@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMyAppointments, cancelAppointment } from '../services/AppointmentService';
+import apiClient from '../utils/axios';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { toast } from 'react-toastify';
 
-// Icons components để tránh lỗi thiếu thẻ đóng
 const AlertSuccessIcon = () => (
   <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -25,7 +25,7 @@ const CalendarIcon = () => (
 );
 
 const MyAppointments = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
@@ -34,60 +34,78 @@ const MyAppointments = () => {
   const [success, setSuccess] = useState(location?.state?.message || null);
   const [cancellingId, setCancellingId] = useState(null);
 
-  // Chuyển hướng người dùng chưa đăng nhập
   useEffect(() => {
-    if (!user) {
+    if (!isAuthenticated) {
       navigate('/login', { state: { from: '/my-appointments' } });
+      return;
     }
-  }, [user, navigate]);
+    if (!user?.permissions?.includes('BOOK_APPOINTMENTS')) {
+      navigate('/access-denied');
+      return;
+    }
+  }, [isAuthenticated, user, navigate]);
 
-  // Đóng thông báo thành công sau 5 giây
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => {
-        setSuccess(null);
-      }, 5000);
+      const timer = setTimeout(() => setSuccess(null), 5000);
       return () => clearTimeout(timer);
     }
   }, [success]);
 
-  // Tải danh sách lịch hẹn khi component mount hoặc user thay đổi
-  useEffect(() => {
-    if (user) {
-      fetchAppointments();
-    }
-  }, [user]);
-
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const response = await getMyAppointments();
-      console.log('Dữ liệu lịch hẹn nhận được:', response?.data);
-      setAppointments(Array.isArray(response?.data) ? response.data : []);
+      // Gọi API với userId của người dùng hiện tại
+      const response = await apiClient.get(`/appointments?userId=${user.userId}`, {
+        withCredentials: true
+      });
+      console.log('Fetched appointments:', response.data);
+      // Lọc lịch hẹn theo userId để đảm bảo chỉ hiển thị của người dùng hiện tại
+      const userAppointments = Array.isArray(response.data)
+        ? response.data.filter((appointment) => appointment.userId === user.userId)
+        : [];
+      setAppointments(userAppointments);
+      if (userAppointments.length === 0) {
+        console.log('No appointments found for userId:', user.userId);
+      }
       setError(null);
     } catch (err) {
-      console.error('Lỗi khi lấy danh sách lịch hẹn:', err);
-      setError('Không thể tải danh sách lịch hẹn. Vui lòng thử lại sau.');
-      setAppointments([]);
+      const errorMsg = err.response?.data?.message || `Không thể tải danh sách lịch hẹn (Status: ${err.response?.status || 'Unknown'}).`;
+      console.error('Error fetching appointments:', {
+        status: err.response?.status,
+        message: errorMsg,
+        responseData: err.response?.data,
+        userId: user?.userId
+      });
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (user?.userId) {
+      fetchAppointments();
+    }
+    if (location?.state?.message === 'Đặt lịch hẹn thành công') {
+      fetchAppointments();
+    }
+  }, [user, location]);
+
   const handleCancel = async (id) => {
     if (!id) return;
-    
     try {
       setCancellingId(id);
-      await cancelAppointment(id);
-      setAppointments(prevAppointments => 
-        prevAppointments.filter(appointment => appointment.appointmentId !== id)
-      );
+      await apiClient.delete(`/appointments/${id}`, { withCredentials: true });
+      setAppointments((prev) => prev.filter((appointment) => appointment.appointmentId !== id));
       setSuccess('Hủy lịch hẹn thành công');
+      toast.success('Hủy lịch hẹn thành công');
       setError(null);
     } catch (err) {
-      console.error('Lỗi khi hủy lịch hẹn:', err);
-      setError('Không thể hủy lịch hẹn. Vui lòng thử lại sau.');
+      const errorMsg = err.response?.data?.message || 'Không thể hủy lịch hẹn.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setCancellingId(null);
     }
@@ -95,20 +113,17 @@ const MyAppointments = () => {
 
   const formatAppointmentTime = (dateTimeString) => {
     if (!dateTimeString) return 'Thời gian không xác định';
-    
     try {
       const date = new Date(dateTimeString);
       return format(date, 'EEEE, dd/MM/yyyy HH:mm', { locale: vi });
     } catch (e) {
-      console.error('Lỗi khi định dạng thời gian:', e);
       return dateTimeString || 'Không xác định';
     }
   };
 
   const getStatusBadge = (status) => {
     if (!status) return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Không xác định</span>;
-    
-    switch(status.toUpperCase()) {
+    switch (status.toUpperCase()) {
       case 'PENDING':
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Chờ xác nhận</span>;
       case 'CONFIRMED':
@@ -122,34 +137,28 @@ const MyAppointments = () => {
     }
   };
 
-  // Không hiển thị gì khi chưa đăng nhập
-  if (!user) {
-    return null;
-  }
-
-  // Hiển thị loading spinner
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Lịch hẹn của tôi</h1>
-        <Link 
-          to="/book-appointment"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2 px-4 transition-colors"
-        >
-          Đặt lịch hẹn mới
-        </Link>
+        <h1 className="text-2xl font-bold text-gray-800">Lịch hẹn của tôi</h1>
+        {user?.permissions?.includes('BOOK_APPOINTMENTS') && (
+          <Link 
+            to="/book-appointment"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2 px-4 transition-colors"
+          >
+            Đặt lịch hẹn mới
+          </Link>
+        )}
       </div>
 
-      {/* Success Alert */}
       {success && (
         <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
           <div className="flex">
@@ -163,7 +172,6 @@ const MyAppointments = () => {
         </div>
       )}
 
-      {/* Error Alert */}
       {error && (
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
           <div className="flex">
@@ -177,7 +185,6 @@ const MyAppointments = () => {
         </div>
       )}
 
-      {/* Empty state */}
       {appointments.length === 0 ? (
         <div className="text-center py-8">
           <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -185,17 +192,18 @@ const MyAppointments = () => {
           </div>
           <h3 className="text-lg font-medium text-gray-900">Không có lịch hẹn nào</h3>
           <p className="mt-1 text-gray-500">Bạn chưa có lịch hẹn nào. Hãy đặt lịch hẹn mới.</p>
-          <div className="mt-6">
-            <Link 
-              to="/book-appointment"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2.5 px-5 transition-colors"
-            >
-              Đặt lịch hẹn
-            </Link>
-          </div>
+          {user?.permissions?.includes('BOOK_APPOINTMENTS') && (
+            <div className="mt-6">
+              <Link 
+                to="/book-appointment"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2.5 px-5 transition-colors"
+              >
+                Đặt lịch hẹn
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
-        /* Appointments table */
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -238,7 +246,7 @@ const MyAppointments = () => {
                       {getStatusBadge(appointment.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {appointment.meetLink ? (
+                      {appointment.status === 'CONFIRMED' && appointment.meetLink ? (
                         <a 
                           href={appointment.meetLink} 
                           target="_blank" 
@@ -248,7 +256,9 @@ const MyAppointments = () => {
                           Tham gia
                         </a>
                       ) : (
-                        <span className="text-gray-500 text-sm">Chưa có</span>
+                        <span className="text-gray-500 text-sm">
+                          {appointment.status === 'PENDING' ? 'Chờ xác nhận' : 'Chưa có'}
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

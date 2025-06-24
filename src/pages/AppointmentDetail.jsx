@@ -1,327 +1,212 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getAppointmentById, updateAppointment, cancelAppointment } from '../services/AppointmentService';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { toast } from 'react-toastify';
 
 function AppointmentDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
-  
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [appointment, setAppointment] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
   const [meetLink, setMeetLink] = useState('');
-  
-  // Fetch thông tin chi tiết lịch hẹn
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
-    const fetchAppointmentDetails = async () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/appointments/${id}` } });
+      return;
+    }
+    if (!user?.permissions?.includes('BOOK_APPOINTMENTS') && !user?.permissions?.includes('MANAGE_APPOINTMENTS')) {
+      navigate('/access-denied');
+      return;
+    }
+
+    const fetchAppointment = async () => {
       try {
         setLoading(true);
-        // Thay thế bằng API call thực tế
-        const response = await fetch(`/appointments/${id}`);
-        if (!response.ok) {
-          throw new Error('Không thể tải thông tin lịch hẹn');
-        }
-        const data = await response.json();
-        setAppointment(data);
-        setMeetLink(data.meetLink || '');
+        const response = await getAppointmentById(id);
+        setAppointment(response.data);
+        setMeetLink(response.data.meetLink || '');
       } catch (err) {
-        setError(err.message);
+        const errorMsg = err.response?.data?.message || 'Không thể tải thông tin lịch hẹn.';
+        setError(errorMsg);
+        toast.error(errorMsg);
       } finally {
         setLoading(false);
       }
     };
-    
-    if (id) {
-      fetchAppointmentDetails();
-    }
-  }, [id]);
-  
-  // Format thời gian
-  const formatAppointmentTime = (dateTimeString) => {
-    if (!dateTimeString) return { date: '', time: '', fullDateTime: '' };
-    
-    const date = new Date(dateTimeString);
-    return {
-      date: date.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-      time: date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-      fullDateTime: new Date(dateTimeString).toISOString()
-    };
-  };
-  
-  // Xác định trạng thái lịch hẹn
-  const getStatusInfo = (status) => {
-    const statusMap = {
-      PENDING: { text: 'Chờ xác nhận', color: 'bg-yellow-200 text-yellow-800' },
-      CONFIRMED: { text: 'Đã xác nhận', color: 'bg-green-200 text-green-800' },
-      CANCELLED: { text: 'Đã hủy', color: 'bg-red-200 text-red-800' },
-      COMPLETED: { text: 'Đã hoàn thành', color: 'bg-purple-200 text-purple-800' }
-    };
-    return statusMap[status] || { text: 'Không xác định', color: 'bg-gray-200 text-gray-800' };
-  };
-  
-  // Xử lý cập nhật meetLink
-  const handleUpdateMeetLink = async () => {
-    if (!meetLink.trim()) {
-      setError('Vui lòng nhập đường dẫn Google Meet');
+    fetchAppointment();
+  }, [id, isAuthenticated, user, navigate]);
+
+  const handleUpdateLink = async () => {
+    if (!meetLink) {
+      setError('Vui lòng nhập link Google Meet.');
+      toast.error('Vui lòng nhập link Google Meet.');
       return;
     }
-    
     try {
-      // Thay thế bằng API call thực tế
-      const response = await fetch(`/appointments/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          meetLink: meetLink
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Cập nhật link meet thất bại');
-      }
-      
+      setIsSubmitting(true);
+      await updateAppointment(id, { meetLink });
       setAppointment({ ...appointment, meetLink });
-      setSuccessMessage('Đã cập nhật đường dẫn Google Meet thành công');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      toast.success('Cập nhật link Google Meet thành công.');
+      setError('');
     } catch (err) {
-      setError(err.message);
-      setTimeout(() => setError(null), 3000);
+      const errorMsg = err.response?.data?.message || 'Cập nhật link Google Meet thất bại.';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
-  // Xử lý hoàn thành lịch hẹn
-  const handleCompleteAppointment = async () => {
+
+  const handleCancel = async () => {
     try {
-      // Thay thế bằng API call thực tế
-      const response = await fetch(`/appointments/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'COMPLETED'
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Cập nhật trạng thái thất bại');
-      }
-      
-      setAppointment({ ...appointment, status: 'COMPLETED' });
-      setSuccessMessage('Đã đánh dấu lịch hẹn là đã hoàn thành');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setIsSubmitting(true);
+      await cancelAppointment(id);
+      toast.success('Hủy lịch hẹn thành công.');
+      navigate('/my-appointments', { state: { message: 'Hủy lịch hẹn thành công' } });
     } catch (err) {
-      setError(err.message);
-      setTimeout(() => setError(null), 3000);
+      const errorMsg = err.response?.data?.message || 'Hủy lịch hẹn thất bại.';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
-  // Hiển thị trạng thái tải
+
+  const formatAppointmentTime = (dateTimeString) => {
+    if (!dateTimeString) return 'Thời gian không xác định';
+    try {
+      const date = new Date(dateTimeString);
+      return format(date, 'EEEE, dd/MM/yyyy HH:mm', { locale: vi });
+    } catch (e) {
+      return dateTimeString || 'Không xác định';
+    }
+  };
+
   if (loading) {
     return (
+      <div className="flex justify-center items-center h-64 mt-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
       <div className="container mx-auto px-4 py-8 mt-20">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        <div className="max-w-4xl mx-auto bg-red-50 text-red-700 p-4 rounded-lg">
+          <p>{error}</p>
         </div>
       </div>
     );
   }
-  
-  // Hiển thị lỗi khi không tìm thấy lịch hẹn
-  if (!appointment && !loading) {
+
+  if (!appointment) {
     return (
       <div className="container mx-auto px-4 py-8 mt-20">
-        <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6">
-          Không tìm thấy thông tin lịch hẹn. Lịch hẹn có thể đã bị xóa hoặc bạn không có quyền truy cập.
+        <div className="max-w-4xl mx-auto bg-gray-50 p-8 rounded-lg text-center">
+          <svg className="w-16 h-16 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">Không tìm thấy lịch hẹn</h3>
+          <p className="mt-2 text-gray-600">Lịch hẹn không tồn tại hoặc đã bị xóa.</p>
+          <div className="mt-6">
+            <Link
+              to="/my-appointments"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Quay lại danh sách lịch hẹn
+            </Link>
+          </div>
         </div>
-        <div className="flex justify-center">
-          <Link to="/my-appointments" className="px-5 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors">
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 mt-20">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
+          <Link
+            to="/my-appointments"
+            className="text-blue-600 hover:text-blue-800 flex items-center font-medium"
+          >
+            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
             Quay lại danh sách lịch hẹn
           </Link>
         </div>
-      </div>
-    );
-  }
-  
-  const { date, time, fullDateTime } = formatAppointmentTime(appointment.appointmentTime);
-  const statusInfo = getStatusInfo(appointment.status);
-  const isConsultant = user && (user.role === 'Consultant' || user.role === 'Admin' || user.role === 'Staff');
-  
-  // Xác định người dùng hiển thị (tư vấn viên hoặc người đặt lịch)
-  const client = appointment.user;
-  const consultant = appointment.consultant.user;
-  
-  return (
-    <div className="container mx-auto px-4 py-8 mt-20">
-      <div className="flex items-center gap-4 mb-6">
-        <Link 
-          to={isConsultant ? "/manage-appointments" : "/my-appointments"}
-          className="flex items-center text-blue-600 hover:text-blue-800"
-        >
-          <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Quay lại
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-800">Chi tiết lịch hẹn</h1>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
-          {statusInfo.text}
-        </span>
-      </div>
-      
-      {error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6">
-          {error}
-        </div>
-      )}
-      
-      {successMessage && (
-        <div className="bg-green-50 text-green-700 p-4 rounded-lg mb-6">
-          {successMessage}
-        </div>
-      )}
-      
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex justify-between items-start">
+
+        <div className="bg-white p-8 rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Chi tiết lịch hẹn</h1>
+          <div className="space-y-4">
             <div>
-              <div className="text-lg font-semibold text-gray-900 mb-1">Thời gian lịch hẹn</div>
-              <div className="text-gray-600">
-                <div className="flex items-center">
-                  <svg className="h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  {date}
-                </div>
-                <div className="flex items-center mt-1">
-                  <svg className="h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {time}
-                </div>
-              </div>
-              
-              {appointment.meetLink && (
-                <a
-                  href={appointment.meetLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 flex items-center text-blue-600 hover:text-blue-800"
-                >
-                  <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Tham gia cuộc họp
+              <label className="block text-sm font-medium text-gray-700">Tư vấn viên</label>
+              <p className="mt-1 text-gray-900">{appointment.consultantFullName || 'Chưa xác định'}</p>
+              <p className="text-sm text-gray-500">{appointment.consultantEmail || 'Không có email'}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Thời gian</label>
+              <p className="mt-1 text-gray-900">{formatAppointmentTime(appointment.appointmentTime)}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
+              <p className="mt-1">
+                {appointment.status === 'PENDING' && <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Chờ xác nhận</span>}
+                {appointment.status === 'CONFIRMED' && <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Đã xác nhận</span>}
+                {appointment.status === 'CANCELLED' && <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Đã hủy</span>}
+                {appointment.status === 'COMPLETED' && <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Hoàn thành</span>}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Link Google Meet</label>
+              {appointment.meetLink ? (
+                <a href={appointment.meetLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                  Tham gia
                 </a>
+              ) : (
+                <p className="text-gray-500">Chưa có link</p>
               )}
-            </div>
-            
-            {/* Thêm vào lịch */}
-            <a
-              href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Lịch hẹn tư vấn&dates=${fullDateTime?.replace(/[-:]/g, '').replace('.000Z', 'Z')}/${new Date(new Date(appointment.appointmentTime).getTime() + 60*60*1000).toISOString().replace(/[-:]/g, '').replace('.000Z', 'Z')}&details=Lịch hẹn tư vấn với ${isConsultant ? client.fullName : consultant.fullName}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-blue-50 text-blue-700 px-4 py-2 rounded-md hover:bg-blue-100 flex items-center"
-            >
-              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Thêm vào Google Calendar
-            </a>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
-          {/* Thông tin tư vấn viên */}
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin tư vấn viên</h2>
-            <div className="flex items-start mb-4">
-              <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center uppercase font-bold text-lg mr-3">
-                {consultant.fullName.charAt(0)}
-              </div>
-              <div>
-                <div className="font-medium text-lg">{consultant.fullName}</div>
-                <div className="text-gray-600">{appointment.consultant.specialization}</div>
-                <div className="text-gray-500 text-sm mt-1">{consultant.email}</div>
-              </div>
-            </div>
-            {isConsultant && appointment.status === 'CONFIRMED' && (
-              <div className="mt-4">
-                <div className="font-medium text-gray-800 mb-2">Link Google Meet</div>
-                <div className="flex items-center">
+              {user?.permissions?.includes('MANAGE_APPOINTMENTS') && appointment.status !== 'CANCELLED' && (
+                <div className="mt-4">
                   <input
                     type="text"
-                    className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={meetLink}
                     onChange={(e) => setMeetLink(e.target.value)}
-                    placeholder="Nhập đường dẫn Google Meet..."
+                    placeholder="Nhập link Google Meet"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                   <button
-                    onClick={handleUpdateMeetLink}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700"
+                    onClick={handleUpdateLink}
+                    disabled={isSubmitting}
+                    className={`mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+                      isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
                   >
-                    Cập nhật
+                    {isSubmitting ? 'Đang xử lý...' : 'Cập nhật link'}
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Thông tin người đặt lịch */}
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin người đặt lịch</h2>
-            <div className="flex items-start mb-4">
-              <div className="w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center uppercase font-bold text-lg mr-3">
-                {client.fullName.charAt(0)}
-              </div>
-              <div>
-                <div className="font-medium text-lg">{client.fullName}</div>
-                <div className="text-gray-500 text-sm mt-1">{client.email}</div>
-                {client.phoneNumber && (
-                  <div className="text-gray-500 text-sm mt-1">{client.phoneNumber}</div>
-                )}
-              </div>
+              )}
             </div>
-          </div>
-        </div>
-        
-        {/* Mô tả và ghi chú */}
-        {appointment.description && (
-          <div className="p-6 border-t border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Mô tả</h2>
-            <p className="text-gray-700 whitespace-pre-line">{appointment.description}</p>
-          </div>
-        )}
-        
-        {/* Các hành động */}
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex flex-wrap justify-end gap-3">
-            <Link
-              to={isConsultant ? "/manage-appointments" : "/my-appointments"}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-            >
-              Quay lại
-            </Link>
-            
-            {appointment.status === 'CONFIRMED' && isConsultant && (
-              <button
-                onClick={handleCompleteAppointment}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-              >
-                Đánh dấu là hoàn thành
-              </button>
-            )}
-            
-            {appointment.status === 'PENDING' && !isConsultant && (
-              <button
-                onClick={() => {/* Xử lý hủy lịch tại đây */}}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Hủy lịch hẹn
-              </button>
+            {appointment.status === 'PENDING' && user?.permissions?.includes('BOOK_APPOINTMENTS') && (
+              <div className="mt-4">
+                <button
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ${
+                    isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isSubmitting ? 'Đang xử lý...' : 'Hủy lịch hẹn'}
+                </button>
+              </div>
             )}
           </div>
         </div>

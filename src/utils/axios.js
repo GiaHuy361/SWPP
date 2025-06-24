@@ -4,62 +4,55 @@ import { toast } from 'react-toastify';
 const apiClient = axios.create({
   baseURL: 'http://localhost:8080/api',
   timeout: 30000,
-  withCredentials: true // Quan trọng: Gửi cookies với mỗi request
+  withCredentials: true
 });
 
-// Log chi tiết request để debug
 apiClient.interceptors.request.use(
   config => {
-    console.log(`Sending ${config.method} request to ${config.url}`, config.data);
+    console.log('Sending request to:', config.url);
     return config;
   },
   error => {
+    console.error('Request Error:', error);
     return Promise.reject(error);
   }
 );
 
-// Xử lý response và lỗi xác thực
 apiClient.interceptors.response.use(
   response => {
-    console.log(`Successful response from ${response.config.url}:`, {
-      status: response.status,
-      data: response.data,
-      headers: response.headers
-    });
+    console.log('API Success:', { url: response.config.url, status: response.status });
     return response;
   },
   async error => {
     const originalRequest = error.config;
-    
-    console.log('API Error:', {
+    const errorMessage = error.response?.data?.message || error.message || 'Lỗi không xác định từ server.';
+    console.error('API Error:', {
       url: originalRequest?.url,
-      method: originalRequest?.method,
       status: error.response?.status,
-      data: error.response?.data,
-      message: error.response?.data?.message || error.message
+      message: errorMessage,
+      data: error.response?.data
     });
-    
-    // Xử lý lỗi 401 Unauthorized - Phiên làm việc đã hết hạn
+
     if (error.response?.status === 401) {
-      // Thông báo cho người dùng
-      toast.error('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-      
-      // Xóa thông tin đăng nhập trong localStorage
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('user');
-      
-      // Redirect đến trang login sau 1s
-      setTimeout(() => {
+      toast.error('Phiên hết hạn. Vui lòng đăng nhập lại.');
+      if (window.location.pathname !== '/login') {
         window.location.href = '/login';
-      }, 1000);
+      }
+      return Promise.reject(error);
     }
-    
-    // Xử lý lỗi 400 Bad Request - Thông tin đăng nhập không hợp lệ
+
+    if (error.response?.status === 403) {
+      toast.error('Bạn không có quyền thực hiện hành động này.');
+    }
+
     if (error.response?.status === 400) {
-      const errorMessage = error.response?.data?.message || 'Thông tin đăng nhập không hợp lệ';
-      toast.error(errorMessage);
+      toast.error(errorMessage || 'Dữ liệu không hợp lệ.');
     }
-    
+
+    if (error.response?.status === 500) {
+      toast.error(errorMessage || 'Lỗi server. Vui lòng thử lại sau.');
+    }
+
     return Promise.reject(error);
   }
 );
