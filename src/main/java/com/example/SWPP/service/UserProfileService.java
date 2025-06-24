@@ -33,16 +33,18 @@ public class UserProfileService {
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
         userProfile.setUser(user);
         userProfile.setUserId(userId);
-        userProfile.setGender(userProfile.getGender());
+        System.out.println("Creating profile with gender: " + userProfile.getGender());
         return userProfileRepository.save(userProfile);
     }
 
     public UserProfile getUserProfile(Long userId) {
-        return userProfileRepository.findByUserId(userId)
+        UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Hồ sơ người dùng không tồn tại"));
+        System.out.println("Fetched profile gender: " + profile.getGender());
+        return profile;
     }
 
-    public UserProfile updateUserProfile(Long userId, UserProfile updatedProfile, String username, String email, String fullName, String phone) {
+    public UserProfile updateUserProfile(Long userId, UserProfile updatedProfile, String username, String email, String fullName, String phone, String gender) {
         UserProfile existingProfile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Hồ sơ người dùng không tồn tại"));
         User user = existingProfile.getUser();
@@ -68,14 +70,23 @@ public class UserProfileService {
         }
         userRepository.save(user);
 
-        // Cập nhật UserProfile (chỉ dateOfBirth và gender)
+        // Cập nhật UserProfile
         if (updatedProfile.getDateOfBirth() != null) {
             existingProfile.setDateOfBirth(updatedProfile.getDateOfBirth());
         }
-        existingProfile.setGender(updatedProfile.getGender());
-        // Không cập nhật lastSurveyScore, lastSurveyRiskLevel, lastSurveyDate, lastSurvey từ updatedProfile
-
-        return userProfileRepository.save(existingProfile);
+        if (gender != null && !gender.isEmpty()) {
+            try {
+                System.out.println("Updating profile with gender: " + gender);
+                existingProfile.setGender(UserProfile.Gender.valueOf(gender));
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Giới tính không hợp lệ: " + gender);
+            }
+        } else {
+            System.out.println("No gender update provided, keeping existing: " + existingProfile.getGender());
+        }
+        UserProfile savedProfile = userProfileRepository.save(existingProfile);
+        System.out.println("Saved profile with gender: " + savedProfile.getGender());
+        return savedProfile;
     }
 
     public void deleteUserProfile(Long userId) {

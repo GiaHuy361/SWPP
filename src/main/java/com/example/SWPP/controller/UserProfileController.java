@@ -42,7 +42,7 @@ public class UserProfileController {
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
-            boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"));
+            boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
             String currentUserEmail = authentication.getName();
             Long authenticatedUserId = userRepository.findByEmail(currentUserEmail)
                     .map(user -> user.getUserId())
@@ -74,7 +74,7 @@ public class UserProfileController {
     public ResponseEntity<?> getUserProfile(@PathVariable Long userId, Authentication authentication) {
         logger.info("Fetching profile for userId={}", userId);
         try {
-            boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"));
+            boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
             String currentUserEmail = authentication.getName();
             Long authenticatedUserId = userRepository.findByEmail(currentUserEmail)
                     .map(user -> user.getUserId())
@@ -98,6 +98,7 @@ public class UserProfileController {
             response.put("lastSurveyScore", profile.getLastSurveyScore() != null ? profile.getLastSurveyScore() : 0);
             response.put("lastSurveyRiskLevel", profile.getLastSurveyRiskLevel() != null ? profile.getLastSurveyRiskLevel().name() : "");
             response.put("lastSurveyDate", profile.getLastSurveyDate() != null ? profile.getLastSurveyDate().toString() : "");
+            logger.debug("Get profile response gender: {}", response.get("gender"));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Failed to fetch profile for userId={}: {}", userId, e.getMessage());
@@ -109,13 +110,14 @@ public class UserProfileController {
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateUserProfile(@PathVariable Long userId, @Valid @RequestBody UpdateUserProfileRequest request, BindingResult bindingResult, Authentication authentication) {
         logger.info("Updating profile for userId={}", userId);
+        logger.debug("Received request: {}", request);
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getFieldError().getDefaultMessage();
             logger.warn("Update profile failed: validation error - {}", errorMsg);
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
-            boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"));
+            boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
             String currentUserEmail = authentication.getName();
             Long authenticatedUserId = userRepository.findByEmail(currentUserEmail)
                     .map(user -> user.getUserId())
@@ -125,16 +127,24 @@ public class UserProfileController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Bạn không có quyền cập nhật hồ sơ này"));
             }
+            String gender = request.getGender();
+            logger.debug("Request gender: {}", gender);
             UserProfile userProfile = new UserProfile();
             userProfile.setDateOfBirth(request.getDateOfBirth());
-            userProfile.setGender(request.getGender());
+            if (gender != null && !gender.trim().isEmpty()) {
+                try {
+                    userProfile.setGender(UserProfile.Gender.valueOf(gender.trim()));
+                    logger.debug("Set gender in UserProfile: {}", userProfile.getGender());
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Invalid gender value: {}", gender);
+                    return ResponseEntity.badRequest().body(Map.of("message", "Giới tính không hợp lệ: " + gender));
+                }
+            } else {
+                logger.debug("No valid gender provided in request, skipping gender update");
+            }
             UserProfile updatedProfile = userProfileService.updateUserProfile(
-                    userId,
-                    userProfile,
-                    request.getUsername(),
-                    request.getEmail(),
-                    request.getFullName(),
-                    request.getPhone()
+                    userId, userProfile, request.getUsername(), request.getEmail(),
+                    request.getFullName(), request.getPhone(), gender
             );
             logger.info("Profile updated successfully: userId={}", userId);
             Map<String, Object> response = new LinkedHashMap<>();
@@ -149,6 +159,7 @@ public class UserProfileController {
             response.put("lastSurveyScore", updatedProfile.getLastSurveyScore() != null ? updatedProfile.getLastSurveyScore() : 0);
             response.put("lastSurveyRiskLevel", updatedProfile.getLastSurveyRiskLevel() != null ? updatedProfile.getLastSurveyRiskLevel().name() : "");
             response.put("lastSurveyDate", updatedProfile.getLastSurveyDate() != null ? updatedProfile.getLastSurveyDate().toString() : "");
+            logger.debug("Response gender: {}", response.get("gender"));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Failed to update profile for userId={}: {}", userId, e.getMessage());
@@ -157,7 +168,7 @@ public class UserProfileController {
         }
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{userId}")
     public ResponseEntity<?> deleteUserProfile(@PathVariable Long userId) {
         logger.info("Deleting profile for userId={}", userId);

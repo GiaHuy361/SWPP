@@ -113,7 +113,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/profiles/{userId}").hasRole("Admin")
                         // API tư vấn viên (Consultant)
                         .requestMatchers(HttpMethod.POST, "/api/consultants").hasAuthority("MANAGE_CONSULTANTS")
-                        .requestMatchers(HttpMethod.GET, "/api/consultants").hasAnyAuthority("MANAGE_CONSULTANTS", "MANAGE_APPOINTMENTS")
+                        .requestMatchers(HttpMethod.GET, "/api/consultants").hasAuthority("BOOK_APPOINTMENTS") // Sửa từ MANAGE_CONSULTANTS|MANAGE_APPOINTMENTS thành BOOK_APPOINTMENTS
                         .requestMatchers(HttpMethod.GET, "/api/consultants/{id}").hasAnyAuthority("MANAGE_CONSULTANTS", "MANAGE_APPOINTMENTS")
                         .requestMatchers(HttpMethod.PUT, "/api/consultants/{id}").hasAuthority("MANAGE_CONSULTANTS")
                         .requestMatchers(HttpMethod.DELETE, "/api/consultants/{id}").hasAuthority("MANAGE_CONSULTANTS")

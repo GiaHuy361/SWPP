@@ -48,8 +48,11 @@ public class ConsultantService {
 
     public List<ConsultantDTO> getAllConsultants() {
         logger.info("Fetching all consultants");
-        checkAuthority("MANAGE_CONSULTANTS");
-        return consultantRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
+        // Xóa checkAuthority("MANAGE_CONSULTANTS") để đồng bộ với SecurityConfig
+        return consultantRepository.findAll().stream()
+                .filter(consultant -> consultant.getIsActive() != null && consultant.getIsActive()) // Chỉ trả về tư vấn viên đang hoạt động
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     public Optional<ConsultantDTO> getConsultantById(Long id) {
