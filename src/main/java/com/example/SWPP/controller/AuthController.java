@@ -5,11 +5,13 @@ import com.example.SWPP.dto.LoginRequest;
 import com.example.SWPP.dto.RegisterRequest;
 import com.example.SWPP.dto.UpdateUserRequest;
 import com.example.SWPP.entity.Role;
+import com.example.SWPP.entity.RolePermission;
 import com.example.SWPP.entity.User;
 import com.example.SWPP.repository.RoleRepository;
 import com.example.SWPP.repository.UserRepository;
 import com.example.SWPP.service.AuthService;
 import com.example.SWPP.service.EmailService;
+import com.example.SWPP.service.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -23,6 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
@@ -49,22 +52,24 @@ public class AuthController {
     private final EmailService emailService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final CustomUserDetailsService customUserDetailsService;
 
     public AuthController(
             AuthService authService,
             UserRepository userRepository,
             RoleRepository roleRepository,
             EmailService emailService,
-            AuthenticationManager authenticationManager) {
+            AuthenticationManager authenticationManager,
+            CustomUserDetailsService customUserDetailsService) {
         this.authService = authService;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.emailService = emailService;
         this.authenticationManager = authenticationManager;
+        this.customUserDetailsService = customUserDetailsService;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
-    // Đăng nhập
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult, HttpServletRequest httpRequest) {
         logger.info("Login attempt: usernameOrEmail={}, sessionId={}", request.getUsernameOrEmail(), httpRequest.getSession().getId());
@@ -74,7 +79,6 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
-            // Tìm người dùng theo username hoặc email
             Optional<User> userOptional = userRepository.findByUsername(request.getUsernameOrEmail());
             if (!userOptional.isPresent()) {
                 userOptional = userRepository.findByEmail(request.getUsernameOrEmail());
@@ -98,7 +102,8 @@ public class AuthController {
                     "email", user.getEmail(),
                     "username", user.getUsername(),
                     "fullName", user.getFullName(),
-                    "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest"
+                    "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest",
+                    "permissions", authService.getUserPermissions(user)
             ));
         } catch (Exception e) {
             logger.error("Login failed for usernameOrEmail={}: {}", request.getUsernameOrEmail(), e.getMessage());
@@ -107,7 +112,6 @@ public class AuthController {
         }
     }
 
-    // Đăng ký người dùng
     @PostMapping("/register")
     @Transactional
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, BindingResult bindingResult) {
@@ -151,20 +155,18 @@ public class AuthController {
             User savedUser = userRepository.saveAndFlush(newUser);
             logger.info("User registered successfully: email={}, user_id={}", request.getEmail(), savedUser.getUserId());
 
-            // Gửi email bất đồng bộ với biến final
-            final User finalSavedUser = savedUser;
             CompletableFuture.runAsync(() -> {
                 try {
                     String subject = "Xác Nhận Đăng Ký Tài Khoản";
-                    String text = "Chào " + finalSavedUser.getFullName() + ",\n\n" +
+                    String text = "Chào " + savedUser.getFullName() + ",\n\n" +
                             "Tài khoản của bạn đã được tạo thành công!\n" +
-                            "Email: " + finalSavedUser.getEmail() + "\n" +
+                            "Email: " + savedUser.getEmail() + "\n" +
                             "Vui lòng đăng nhập để sử dụng dịch vụ.\n\n" +
                             "Trân trọng,\nHệ thống";
-                    emailService.sendSimpleMessage(finalSavedUser.getEmail(), subject, text);
-                    logger.info("Confirmation email sent to: {}", finalSavedUser.getEmail());
+                    emailService.sendSimpleMessage(savedUser.getEmail(), subject, text);
+                    logger.info("Confirmation email sent to: {}", savedUser.getEmail());
                 } catch (Exception e) {
-                    logger.error("Failed to send confirmation email to {}: {}", finalSavedUser.getEmail(), e.getMessage());
+                    logger.error("Failed to send confirmation email to {}: {}", savedUser.getEmail(), e.getMessage());
                 }
             });
 
@@ -176,7 +178,6 @@ public class AuthController {
         }
     }
 
-    // Đăng xuất
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request) {
         logger.info("Logout attempt: sessionId={}", request.getSession().getId());
@@ -186,7 +187,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công"));
     }
 
-    // Đăng nhập Google
     @PostMapping("/login-google")
     @Transactional
     public ResponseEntity<?> loginGoogle(@Valid @RequestBody GoogleLoginRequest request, BindingResult bindingResult, HttpServletRequest httpRequest) {
@@ -229,7 +229,6 @@ public class AuthController {
                 user = userRepository.saveAndFlush(user);
                 logger.info("New user created via Google login: email={}, user_id={}", email, user.getUserId());
 
-                // Gửi email chào mừng với biến final
                 final User finalUser = user;
                 CompletableFuture.runAsync(() -> {
                     try {
@@ -246,18 +245,18 @@ public class AuthController {
                     }
                 });
             }
-            List<SimpleGrantedAuthority> authorities = user.getRole() != null ?
-                    List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName())) : List.of();
-            Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, authorities);
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+            Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
             HttpSession session = httpRequest.getSession(true);
-            logger.info("Google login successful: email={}, sessionId={}", email, session.getId());
+            logger.info("Google login successful: email={}, sessionId={}, authorities={}", email, session.getId(), userDetails.getAuthorities());
             return ResponseEntity.ok(Map.of(
                     "userId", user.getUserId(),
                     "email", user.getEmail(),
                     "username", user.getUsername(),
                     "fullName", user.getFullName(),
-                    "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest"
+                    "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest",
+                    "permissions", authService.getUserPermissions(user)
             ));
         } catch (Exception e) {
             logger.error("Google login failed: {}", e.getMessage());
@@ -266,7 +265,6 @@ public class AuthController {
         }
     }
 
-    // Lấy thông tin người dùng hiện tại
     @GetMapping("/user")
     public ResponseEntity<?> getCurrentUser(Authentication authentication, HttpServletRequest request) {
         logger.info("Fetching current user: authentication={}, sessionId={}", authentication, request.getSession().getId());
@@ -294,11 +292,11 @@ public class AuthController {
                 "username", user.getUsername(),
                 "fullName", user.getFullName(),
                 "phone", user.getPhone() != null ? user.getPhone() : "",
-                "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest"
+                "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest",
+                "permissions", authService.getUserPermissions(user)
         ));
     }
 
-    // Lấy thông tin người dùng theo email
     @GetMapping("/users/{email}")
     public ResponseEntity<?> getUserByEmail(@PathVariable String email, Authentication authentication) {
         logger.info("Fetching user for email={}", email);
@@ -318,7 +316,8 @@ public class AuthController {
                     "username", user.getUsername(),
                     "fullName", user.getFullName(),
                     "phone", user.getPhone() != null ? user.getPhone() : "",
-                    "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest"
+                    "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest",
+                    "permissions", authService.getUserPermissions(user)
             ));
         } catch (Exception e) {
             logger.error("Failed to fetch user for email={}: {}", email, e.getMessage());
@@ -327,7 +326,6 @@ public class AuthController {
         }
     }
 
-    // Lấy danh sách tất cả người dùng (cho admin)
     @Transactional
     @GetMapping("/users")
     @PreAuthorize("hasRole('Admin')")
@@ -345,6 +343,7 @@ public class AuthController {
                 userMap.put("fullName", user.getFullName() != null ? user.getFullName() : "");
                 userMap.put("phone", user.getPhone() != null ? user.getPhone() : "");
                 userMap.put("role", user.getRole() != null ? user.getRole().getRoleName() : "Guest");
+                userMap.put("permissions", authService.getUserPermissions(user));
                 return userMap;
             }).collect(Collectors.toList());
             logger.info("Returning user list with {} entries", userList.size());
@@ -356,7 +355,6 @@ public class AuthController {
         }
     }
 
-    // Cập nhật thông tin người dùng
     @PutMapping("/users/{userId}")
     @Transactional
     public ResponseEntity<?> updateUser(@PathVariable Long userId, @Valid @RequestBody UpdateUserRequest updateRequest, BindingResult bindingResult, Authentication authentication) {
@@ -413,7 +411,8 @@ public class AuthController {
                     "username", user.getUsername(),
                     "fullName", user.getFullName(),
                     "phone", user.getPhone() != null ? user.getPhone() : "",
-                    "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest"
+                    "role", user.getRole() != null ? user.getRole().getRoleName() : "Guest",
+                    "permissions", authService.getUserPermissions(user)
             ));
         } catch (Exception e) {
             logger.error("Failed to update user: userId={}: {}", userId, e.getMessage());
@@ -422,7 +421,6 @@ public class AuthController {
         }
     }
 
-    // Xóa người dùng
     @DeleteMapping("/users/{userId}")
     @PreAuthorize("hasRole('Admin')")
     @Transactional

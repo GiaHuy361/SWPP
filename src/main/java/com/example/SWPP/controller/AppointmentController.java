@@ -56,22 +56,33 @@ public class AppointmentController {
         }
     }
 
-    // Read: Lấy tất cả lịch hẹn
+    // Read: Lấy tất cả lịch hẹn hoặc lịch hẹn của người dùng
     @GetMapping
     @PreAuthorize("hasAuthority('MANAGE_APPOINTMENTS') or hasAuthority('BOOK_APPOINTMENTS')")
-    public ResponseEntity<?> getAllAppointments(Authentication authentication) {
-        logger.info("Fetching all appointments");
+    public ResponseEntity<?> getAllAppointments(
+            @RequestParam(value = "userId", required = false) Long userId,
+            Authentication authentication) {
+        logger.info("Fetching appointments for userId: {}", userId);
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Chưa xác thực"));
             }
-            List<AppointmentDTO> appointments = appointmentService.getAllAppointments();
+            List<AppointmentDTO> appointments;
+            if (userId != null) {
+                appointments = appointmentService.getAppointmentsByUserId(userId);
+            } else {
+                if (!authentication.getAuthorities().contains(new SimpleGrantedAuthority("MANAGE_APPOINTMENTS"))) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("message", "Không có quyền MANAGE_APPOINTMENTS"));
+                }
+                appointments = appointmentService.getAllAppointments();
+            }
             return ResponseEntity.ok(appointments);
         } catch (Exception e) {
-            logger.error("Failed to fetch all appointments: {}", e.getMessage());
+            logger.error("Failed to fetch appointments: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Lấy danh sách thất bại"));
+                    .body(Map.of("message", "Lấy danh sách thất bại: " + e.getMessage()));
         }
     }
 
@@ -88,7 +99,6 @@ public class AppointmentController {
             String currentUserEmail = authentication.getName();
             AppointmentDTO appointment = appointmentService.getAppointmentById(id)
                     .orElseThrow(() -> new RuntimeException("Lịch hẹn không tồn tại"));
-            // Kiểm tra quyền truy cập
             boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"));
             boolean isConsultant = appointment.getConsultantEmail().equals(currentUserEmail);
             boolean isUser = appointment.getUserEmail().equals(currentUserEmail);

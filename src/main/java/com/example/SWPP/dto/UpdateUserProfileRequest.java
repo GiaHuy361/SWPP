@@ -1,16 +1,17 @@
 package com.example.SWPP.dto;
 
-import com.example.SWPP.entity.UserProfile.Gender;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
 
 public class UpdateUserProfileRequest {
     @PastOrPresent
     private LocalDate dateOfBirth;
 
-    private Gender gender;
+    @Pattern(regexp = "^(MALE|FEMALE|OTHER)?$", message = "Giới tính phải là MALE, FEMALE hoặc OTHER")
+    private String gender;
 
     @Size(min = 3, max = 50, message = "Tên đăng nhập phải từ 3 đến 50 ký tự")
     private String username;
@@ -27,8 +28,8 @@ public class UpdateUserProfileRequest {
 
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
-    public Gender getGender() { return gender; }
-    public void setGender(Gender gender) { this.gender = gender; }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
     public String getEmail() { return email; }

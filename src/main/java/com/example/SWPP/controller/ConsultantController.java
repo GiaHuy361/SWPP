@@ -50,7 +50,7 @@ public class ConsultantController {
 
     // Read: Lấy tất cả tư vấn viên
     @GetMapping
-    @PreAuthorize("hasAuthority('MANAGE_CONSULTANTS') or hasAuthority('MANAGE_APPOINTMENTS')")
+    @PreAuthorize("hasAuthority('BOOK_APPOINTMENTS')") // Sửa từ MANAGE_CONSULTANTS|MANAGE_APPOINTMENTS thành BOOK_APPOINTMENTS
     public ResponseEntity<?> getAllConsultants() {
         logger.info("Fetching all consultants");
         try {
@@ -59,7 +59,7 @@ public class ConsultantController {
         } catch (Exception e) {
             logger.error("Failed to fetch all consultants: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Lấy danh sách thất bại"));
+                    .body(Map.of("message", "Lấy danh sách thất bại: " + e.getMessage()));
         }
     }
 
@@ -75,7 +75,7 @@ public class ConsultantController {
         } catch (Exception e) {
             logger.error("Failed to fetch consultant: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Không tìm thấy tư vấn viên"));
+                    .body(Map.of("message", "Không tìm thấy tư vấn viên: " + e.getMessage()));
         }
     }
 
@@ -114,7 +114,7 @@ public class ConsultantController {
         } catch (Exception e) {
             logger.error("Failed to delete consultant: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Xóa tư vấn viên thất bại"));
+                    .body(Map.of("message", "Xóa tư vấn viên thất bại: " + e.getMessage()));
         }
     }
 }
