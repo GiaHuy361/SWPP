@@ -7,10 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.Period;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class CourseService {
@@ -41,6 +38,7 @@ public class CourseService {
     @Transactional
     public Course createCourse(Course course) {
         logger.info("Creating new course: {}", course.getTitle());
+        validateCourseScores(course);
         return courseRepository.save(course);
     }
 
@@ -48,6 +46,7 @@ public class CourseService {
     public Course updateCourse(Long id, Course updatedCourse) {
         logger.info("Updating course with id={}", id);
         Course course = getCourseById(id);
+        validateCourseScores(updatedCourse);
         course.setTitle(updatedCourse.getTitle());
         course.setLevel(updatedCourse.getLevel());
         course.setDescription(updatedCourse.getDescription());
@@ -55,6 +54,14 @@ public class CourseService {
         course.setRecommendedMaxScore(updatedCourse.getRecommendedMaxScore());
         course.setAgeGroup(updatedCourse.getAgeGroup());
         return courseRepository.save(course);
+    }
+
+    private void validateCourseScores(Course course) {
+        if (course.getRecommendedMaxScore() < course.getRecommendedMinScore()) {
+            logger.error("Invalid course scores: recommendedMaxScore={} is less than recommendedMinScore={}",
+                    course.getRecommendedMaxScore(), course.getRecommendedMinScore());
+            throw new IllegalArgumentException("recommendedMaxScore must be greater than or equal to recommendedMinScore");
+        }
     }
 
     @Transactional
@@ -74,26 +81,39 @@ public class CourseService {
             throw new IllegalArgumentException("Survey response does not belong to the user");
         }
         int totalScore = response.getTotalScore();
-        String userAgeGroup = calculateAgeGroup(user.getProfile() != null ? user.getProfile().getDateOfBirth() : null);
-        return courseRepository.findAll().stream()
-                .filter(course -> totalScore >= course.getRecommendedMinScore()
-                        && totalScore <= course.getRecommendedMaxScore()
-                        && course.getAgeGroup().equals(userAgeGroup))
-                .collect(Collectors.toList());
+        String riskLevel = response.getRiskLevel();
+        String courseLevel = mapRiskLevelToCourseLevel(riskLevel);
+
+        logger.debug("UserId: {}, TotalScore: {}, RiskLevel: {}, CourseLevel: {}",
+                userId, totalScore, riskLevel, courseLevel);
+
+        List<Course> courses = courseRepository.findByRecommendedMinScoreLessThanEqualAndRecommendedMaxScoreGreaterThanEqualAndLevel(
+                totalScore, totalScore, courseLevel);
+
+        if (courses.isEmpty()) {
+            logger.warn("No courses found for score={}, level={}", totalScore, courseLevel);
+        } else {
+            logger.info("Found {} courses for score={}, level={}", courses.size(), totalScore, courseLevel);
+        }
+
+        return courses;
     }
 
-    private String calculateAgeGroup(LocalDate dateOfBirth) {
-        if (dateOfBirth == null) {
-            return "Unknown";
+    private String mapRiskLevelToCourseLevel(String riskLevel) {
+        if (riskLevel == null) {
+            logger.warn("RiskLevel is null, defaulting to Beginner");
+            return "Beginner";
         }
-        LocalDate today = LocalDate.now();
-        int age = Period.between(dateOfBirth, today).getYears();
-        if (age >= 12 && age <= 15) {
-            return "12-15";
-        } else if (age >= 16 && age <= 18) {
-            return "16-18";
-        } else {
-            return "Other";
+        switch (riskLevel) {
+            case "Low Risk":
+                return "Beginner";
+            case "Moderate Risk":
+                return "Intermediate";
+            case "High Risk":
+                return "Advanced";
+            default:
+                logger.warn("Unknown riskLevel: {}, defaulting to Beginner", riskLevel);
+                return "Beginner";
         }
     }
 }

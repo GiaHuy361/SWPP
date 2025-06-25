@@ -15,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -114,7 +116,12 @@ public class CourseController {
             String email = authentication.getName();
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
-            List<CourseDTO> courses = courseService.suggestCourses(user.getUserId(), surveyResponseId).stream()
+            List<Course> recommendedCourses = courseService.suggestCourses(user.getUserId(), surveyResponseId);
+            if (recommendedCourses.isEmpty()) {
+                logger.warn("No recommended courses found for surveyResponseId={}", surveyResponseId);
+                return ResponseEntity.ok(Map.of("message", "No suitable courses found", "courses", new ArrayList<>()));
+            }
+            List<CourseDTO> courses = recommendedCourses.stream()
                     .map(CourseMapper::toDto)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(courses);
@@ -122,6 +129,10 @@ public class CourseController {
             logger.error("Failed to fetch recommended courses: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Unexpected error fetching recommended courses: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An unexpected error occurred"));
         }
     }
 }
