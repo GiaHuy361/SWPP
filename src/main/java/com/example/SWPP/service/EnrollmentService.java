@@ -44,6 +44,7 @@ public class EnrollmentService {
         enrollment.setUser(user);
         enrollment.setCourse(course);
         enrollment.setEnrolledAt(LocalDateTime.now());
+
         return enrollmentRepository.save(enrollment);
     }
 

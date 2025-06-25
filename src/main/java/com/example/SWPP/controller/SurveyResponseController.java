@@ -1,12 +1,16 @@
 package com.example.SWPP.controller;
 
+import com.example.SWPP.dto.CourseDTO;
 import com.example.SWPP.dto.SurveyResponseDTO;
+import com.example.SWPP.entity.Survey;
 import com.example.SWPP.entity.SurveyQuestion;
 import com.example.SWPP.entity.SurveyResponse;
 import com.example.SWPP.entity.User;
 import com.example.SWPP.repository.UserRepository;
+import com.example.SWPP.service.CourseService; // Thêm import
 import com.example.SWPP.service.SurveyResponseService;
 import com.example.SWPP.service.SurveyService;
+import com.example.SWPP.mapper.CourseMapper; // Thêm import
 import com.example.SWPP.mapper.SurveyMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +42,13 @@ public class SurveyResponseController {
     private SurveyService surveyService;
 
     @Autowired
+    private CourseService courseService; // Thêm dependency
+
+    @Autowired
     private SurveyMapper surveyMapper;
+
+    @Autowired
+    private CourseMapper courseMapper; // Thêm dependency
 
     @Autowired
     private UserRepository userRepository;
@@ -249,6 +259,74 @@ public class SurveyResponseController {
             logger.error("Failed to fetch user responses and analysis for surveyId={}: {}", surveyId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Lấy thông tin phản hồi và phân tích thất bại: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/submit-and-recommend")
+    @PreAuthorize("hasAuthority('VIEW_SURVEYS')")
+    public ResponseEntity<?> submitSurveyAndGetRecommendations(@Valid @RequestBody SurveyResponseDTO responseDTO, BindingResult bindingResult) {
+        logger.info("Submitting survey response and fetching recommendations for user");
+        User user = getCurrentUser();
+        if (user == null) {
+            logger.warn("Unauthorized access attempt");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Chưa xác thực người dùng"));
+        }
+        if (bindingResult.hasErrors()) {
+            String errorMsg = bindingResult.getFieldError().getDefaultMessage();
+            logger.warn("Validation failed for survey response submission: {}", errorMsg);
+            return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
+        }
+        try {
+            responseDTO.setUserId(user.getUserId());
+            if (responseDTO.getSurveyId() == null) {
+                logger.warn("Survey ID is null for userId={}", user.getUserId());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Survey ID không được để trống"));
+            }
+
+            // Kiểm tra khảo sát tồn tại
+            Survey survey = surveyService.getSurveyById(responseDTO.getSurveyId());
+            if (survey == null) {
+                logger.warn("Survey not found for surveyId={}", responseDTO.getSurveyId());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Khảo sát không tồn tại"));
+            }
+
+            // Tạo và lưu phản hồi khảo sát
+            SurveyResponse response = surveyMapper.toSurveyResponseEntity(responseDTO);
+            SurveyResponse createdResponse = surveyResponseService.createSurveyResponse(response);
+
+            // Tính toán điểm và mức độ rủi ro
+            Map<String, Object> scoreResult = surveyResponseService.calculateScore(createdResponse.getId());
+
+            // Lấy danh sách khóa học đề xuất
+            List<CourseDTO> courseDTOs = courseService.suggestCourses(user.getUserId(), createdResponse.getId()).stream()
+                    .map(CourseMapper::toDto) // Sửa dòng này
+                    .collect(Collectors.toList());
+
+            // Chuẩn bị phản hồi
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("surveyResponseId", createdResponse.getId());
+            responseBody.put("surveyId", survey.getId());
+            responseBody.put("surveyTitle", survey.getTitle());
+            responseBody.put("totalScore", scoreResult.get("totalScore"));
+            responseBody.put("riskLevel", scoreResult.get("riskLevel"));
+            responseBody.put("maxScore", scoreResult.get("maxScore"));
+            responseBody.put("courses", courseDTOs.isEmpty() ? List.of() : courseDTOs);
+            responseBody.put("message", courseDTOs.isEmpty() ? "Không tìm thấy khóa học phù hợp dựa trên kết quả khảo sát" : "Khóa học đề xuất được tìm thấy");
+
+            logger.info("Survey response submitted successfully: id={}, surveyId={}, totalScore={}, riskLevel={}",
+                    createdResponse.getId(), survey.getId(), scoreResult.get("totalScore"), scoreResult.get("riskLevel"));
+            return ResponseEntity.status(HttpStatus.CREATED).body(responseBody);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input for survey response submission: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Tạo phản hồi hoặc đề xuất khóa học thất bại: " + e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Failed to submit survey response and get recommendations: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Xử lý thất bại: " + e.getMessage()));
         }
     }
 

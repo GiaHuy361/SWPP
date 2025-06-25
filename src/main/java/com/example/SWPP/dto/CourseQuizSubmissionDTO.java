@@ -1,5 +1,6 @@
 package com.example.SWPP.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -14,18 +15,18 @@ public class CourseQuizSubmissionDTO {
 
     private LocalDateTime submittedAt;
 
-    @NotNull(message = "Percentage score is mandatory")
     private Integer percentageScore;
 
-    @NotNull(message = "Passed flag is mandatory")
     private Boolean passed;
 
     @NotNull(message = "Duration taken is mandatory")
     private Integer durationTaken;
 
-    @NotNull(message = "Answer IDs are mandatory")
-    private List<Long> answerIds;
+    @NotNull(message = "Answers are mandatory")
+    @Valid
+    private List<CourseQuizSubmissionAnswerDTO> answers;
 
+    // --- GETTERS & SETTERS ---
     public Long getId() {
         return id;
     }
@@ -82,11 +83,11 @@ public class CourseQuizSubmissionDTO {
         this.durationTaken = durationTaken;
     }
 
-    public List<Long> getAnswerIds() {
-        return answerIds;
+    public List<CourseQuizSubmissionAnswerDTO> getAnswers() {
+        return answers;
     }
 
-    public void setAnswerIds(List<Long> answerIds) {
-        this.answerIds = answerIds;
+    public void setAnswers(List<CourseQuizSubmissionAnswerDTO> answers) {
+        this.answers = answers;
     }
 }

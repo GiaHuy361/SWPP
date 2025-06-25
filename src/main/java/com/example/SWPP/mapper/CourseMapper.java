@@ -2,7 +2,9 @@ package com.example.SWPP.mapper;
 
 import com.example.SWPP.dto.CourseDTO;
 import com.example.SWPP.entity.Course;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CourseMapper {
     public static CourseDTO toDto(Course course) {
         CourseDTO dto = new CourseDTO();
