@@ -18,6 +18,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,19 +53,33 @@ public class SurveyController {
     public ResponseEntity<?> createSurvey(@Valid @RequestBody SurveyDTO surveyDTO, BindingResult bindingResult) {
         logger.info("Creating survey: {}", surveyDTO.getTitle());
         if (bindingResult.hasErrors()) {
-            String errorMsg = bindingResult.getFieldError().getDefaultMessage();
+            String errorMsg = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .collect(Collectors.joining(", "));
             logger.warn("Validation failed for survey creation: {}", errorMsg);
-            return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
+            return ResponseEntity.badRequest().body(Map.of("message", "Validation failed: " + errorMsg));
         }
         try {
+            // Kiểm tra surveyTypeId tồn tại
+            if (surveyDTO.getSurveyTypeId() != null && !surveyService.isSurveyTypeExists(surveyDTO.getSurveyTypeId())) {
+                logger.warn("SurveyTypeId {} does not exist", surveyDTO.getSurveyTypeId());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "surveyTypeId không tồn tại: " + surveyDTO.getSurveyTypeId()));
+            }
+            // Đặt createdAt mặc định nếu không có
+            if (surveyDTO.getCreatedAt() == null) {
+                surveyDTO.setCreatedAt(LocalDateTime.now());
+                logger.debug("Set default createdAt: {}", surveyDTO.getCreatedAt());
+            }
             Survey survey = surveyMapper.toSurveyEntity(surveyDTO);
             Survey createdSurvey = surveyService.createSurvey(survey);
             SurveyDTO responseDTO = surveyMapper.toSurveyDTO(createdSurvey);
+            logger.info("Survey created successfully: id={}", createdSurvey.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
         } catch (Exception e) {
-            logger.error("Failed to create survey: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Tạo khảo sát thất bại"));
+            logger.error("Failed to create survey: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Tạo khảo sát thất bại: " + e.getMessage()));
         }
     }
 
@@ -109,11 +125,18 @@ public class SurveyController {
     public ResponseEntity<?> updateSurvey(@PathVariable Long id, @Valid @RequestBody SurveyDTO surveyDTO, BindingResult bindingResult) {
         logger.info("Updating survey with id: {}", id);
         if (bindingResult.hasErrors()) {
-            String errorMsg = bindingResult.getFieldError().getDefaultMessage();
+            String errorMsg = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .collect(Collectors.joining(", "));
             logger.warn("Validation failed for survey update: {}", errorMsg);
-            return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
+            return ResponseEntity.badRequest().body(Map.of("message", "Validation failed: " + errorMsg));
         }
         try {
+            if (surveyDTO.getSurveyTypeId() != null && !surveyService.isSurveyTypeExists(surveyDTO.getSurveyTypeId())) {
+                logger.warn("SurveyTypeId {} does not exist", surveyDTO.getSurveyTypeId());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "surveyTypeId không tồn tại: " + surveyDTO.getSurveyTypeId()));
+            }
             Survey survey = surveyMapper.toSurveyEntity(surveyDTO);
             Survey updatedSurvey = surveyService.updateSurvey(id, survey);
             if (updatedSurvey == null) {

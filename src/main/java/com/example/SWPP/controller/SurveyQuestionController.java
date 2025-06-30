@@ -51,21 +51,32 @@ public class SurveyQuestionController {
     public ResponseEntity<?> createSurveyQuestion(@Valid @RequestBody SurveyQuestionDTO questionDTO, BindingResult bindingResult) {
         logger.info("Creating survey question: {}", questionDTO.getQuestionText());
         if (bindingResult.hasErrors()) {
-            String errorMsg = bindingResult.getFieldError().getDefaultMessage();
+            String errorMsg = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .collect(Collectors.joining(", "));
             logger.warn("Validation failed: {}", errorMsg);
-            return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
+            return ResponseEntity.badRequest().body(Map.of("message", "Validation failed: " + errorMsg));
         }
         try {
+            // Ánh xạ DTO thành entity và xóa ID tạm để tránh detached entity
             SurveyQuestion question = surveyMapper.toSurveyQuestionEntity(questionDTO);
+            question.setId(null); // Đảm bảo ID của SurveyQuestion là null để Hibernate tự sinh
+            if (question.getOptions() != null) {
+                question.getOptions().forEach(option -> {
+                    option.setId(null); // Xóa ID tạm của SurveyOption
+                    option.setQuestion(question); // Đảm bảo quan hệ với SurveyQuestion
+                });
+            }
             SurveyQuestion createdQuestion = surveyService.createSurveyQuestion(question);
             SurveyQuestionDTO responseDTO = surveyMapper.toSurveyQuestionDTO(createdQuestion);
+            logger.info("Survey question created successfully: id={}", createdQuestion.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid input: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            logger.error("Failed to create survey question: {}", e.getMessage());
+            logger.error("Failed to create survey question: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Tạo câu hỏi khảo sát thất bại: " + e.getMessage()));
         }
@@ -113,12 +124,20 @@ public class SurveyQuestionController {
     public ResponseEntity<?> updateSurveyQuestion(@PathVariable Long id, @Valid @RequestBody SurveyQuestionDTO questionDTO, BindingResult bindingResult) {
         logger.info("Updating survey question with id: {}", id);
         if (bindingResult.hasErrors()) {
-            String errorMsg = bindingResult.getFieldError().getDefaultMessage();
+            String errorMsg = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .collect(Collectors.joining(", "));
             logger.warn("Validation failed: {}", errorMsg);
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
             SurveyQuestion question = surveyMapper.toSurveyQuestionEntity(questionDTO);
+            if (question.getOptions() != null) {
+                question.getOptions().forEach(option -> {
+                    option.setId(null); // Xóa ID tạm để tránh detached entity
+                    option.setQuestion(question); // Đảm bảo quan hệ với SurveyQuestion
+                });
+            }
             SurveyQuestion updatedQuestion = surveyService.updateSurveyQuestion(id, question);
             if (updatedQuestion == null) {
                 logger.warn("Survey question not found for update: {}", id);
