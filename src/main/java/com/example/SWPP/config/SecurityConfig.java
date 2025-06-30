@@ -171,6 +171,15 @@ public class SecurityConfig {
                         // API ghi danh
                         .requestMatchers(HttpMethod.POST, "/api/enrollments/courses/*").hasAuthority("ENROLL_COURSES")
                         .requestMatchers(HttpMethod.GET, "/api/enrollments/user").hasAuthority("VIEW_COURSES")
+
+                        // API thông báo (Notifications)
+                        .requestMatchers(HttpMethod.GET, "/api/notifications").hasAuthority("VIEW_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.GET, "/api/notifications/unread").hasAuthority("VIEW_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.GET, "/api/notifications/{id}").hasAuthority("VIEW_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.PUT, "/api/notifications/{id}/read").hasAuthority("VIEW_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.POST, "/api/notifications").hasAuthority("MANAGE_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.PUT, "/api/notifications/{id}").hasAuthority("MANAGE_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.DELETE, "/api/notifications/{id}").hasAuthority("MANAGE_NOTIFICATIONS")
                         // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )
