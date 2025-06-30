@@ -28,6 +28,23 @@ import AccessDenied from './pages/AccessDenied';
 import NotFoundPage from './pages/NotFoundPage';
 import ContactPage from './pages/ContactPage';
 import MyAppointments from './pages/MyAppointments';
+import EnrollCoursePage from './pages/courses/EnrollCoursePage';
+import CoursePage from './pages/courses/CoursePage';
+import CourseListPage from './pages/courses/CourseListPage';
+import EnrollCourseListPage from './pages/courses/EnrollCourseListPage';
+import MyCoursesPage from './pages/courses/MyCoursesPage';
+import CertificatePage from './pages/courses/CertificatePage';
+// Admin Course Management
+import CourseManagement from './pages/admin/CourseManagement';
+import CourseDetail from './pages/admin/CourseDetail';
+import CourseForm from './pages/admin/CourseForm';
+import ModuleManagement from './pages/admin/ModuleManagement';
+import LessonManagement from './pages/admin/LessonManagement';
+import QuizManagement from './pages/admin/QuizManagement';
+import StudentManagement from './pages/admin/StudentManagement';
+import CertificateManagement from './pages/admin/CertificateManagement';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import RegisterPage from './pages/RegisterPage';
 
 function App() {
   return (
@@ -57,7 +74,28 @@ function App() {
               <Route path="/create-user" element={<PrivateRoute requiredPermission="MANAGE_USERS"><CreateUserPage /></PrivateRoute>} />
               <Route path="/edit-user/:id" element={<PrivateRoute requiredPermission="MANAGE_USERS"><EditUserPage /></PrivateRoute>} />
               <Route path="/role-permissions" element={<PrivateRoute requiredPermission="MANAGE_ROLES"><RolePermissionPage /></PrivateRoute>} />
+              <Route path="/courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CourseListPage /></PrivateRoute>} />
+              <Route path="/courses/:courseId/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCoursePage /></PrivateRoute>} />
+              <Route path="/courses/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCourseListPage /></PrivateRoute>} />
+              <Route path="/courses/:courseId/*" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CoursePage /></PrivateRoute>} />
+              <Route path="/my-courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><MyCoursesPage /></PrivateRoute>} />
+              <Route path="/certificate/:courseId" element={<CertificatePage />} />
+              
+              {/* Admin Course Management Routes */}
+              <Route path="/admin" element={<PrivateRoute requiredPermission="ROLE_Admin"><AdminDashboard /></PrivateRoute>} />
+              <Route path="/admin/dashboard" element={<PrivateRoute requiredPermission="ROLE_Admin"><AdminDashboard /></PrivateRoute>} />
+              <Route path="/admin/courses" element={<PrivateRoute requiredPermission="ROLE_Admin"><CourseManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/create" element={<PrivateRoute requiredPermission="ROLE_Admin"><CourseForm /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId" element={<PrivateRoute requiredPermission="ROLE_Admin"><CourseDetail /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/edit" element={<PrivateRoute requiredPermission="ROLE_Admin"><CourseForm /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules" element={<PrivateRoute requiredPermission="ROLE_Admin"><ModuleManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules/:moduleId/lessons" element={<PrivateRoute requiredPermission="ROLE_Admin"><LessonManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/:lessonId/quizzes" element={<PrivateRoute requiredPermission="ROLE_Admin"><QuizManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/students" element={<PrivateRoute requiredPermission="ROLE_Admin"><StudentManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/certificates" element={<PrivateRoute requiredPermission="ROLE_Admin"><CertificateManagement /></PrivateRoute>} />
+              
               <Route path="/access-denied" element={<AccessDenied />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>

@@ -25,9 +25,12 @@ const HeroSection = () => {
             <button className="px-8 py-3 text-lg font-semibold text-white bg-blue-700 rounded-lg hover:bg-blue-800 transition-colors duration-300">
               Get Started
             </button>
-            <button className="px-8 py-3 text-lg font-semibold text-blue-700 border-2 border-blue-700 rounded-lg hover:bg-blue-50 transition-colors duration-300">
-              Learn More
-            </button>
+            <a
+              href="/courses/enroll"
+              className="px-8 py-3 text-lg font-semibold text-blue-700 border-2 border-blue-700 rounded-lg hover:bg-blue-50 transition-colors duration-300 text-center"
+            >
+              Khóa học
+            </a>
           </div>
         </div>
       </div>
