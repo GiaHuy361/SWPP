@@ -21,7 +21,7 @@ public class Enrollment {
     @Column(nullable = false)
     private LocalDateTime enrolledAt;
 
-    @Column(length = 50, nullable = false)
+    @Column(length = 50)
     private String status;
 
     @OneToOne(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)

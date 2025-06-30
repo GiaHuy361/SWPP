@@ -123,7 +123,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/appointments").hasAnyAuthority("BOOK_APPOINTMENTS", "MANAGE_APPOINTMENTS")
                         .requestMatchers(HttpMethod.GET, "/api/appointments/{id}").hasAnyAuthority("BOOK_APPOINTMENTS", "MANAGE_APPOINTMENTS")
                         .requestMatchers(HttpMethod.PUT, "/api/appointments/{id}").hasAuthority("MANAGE_APPOINTMENTS")
-                        .requestMatchers(HttpMethod.DELETE, "/api/appointments/{id}").hasAnyAuthority("MANAGE_APPOINTMENTS", "ROLE_Admin")// API khóa học
+                        .requestMatchers(HttpMethod.DELETE, "/api/appointments/{id}").hasAnyAuthority("MANAGE_APPOINTMENTS", "ROLE_Admin")
+                        // API khóa học
                         .requestMatchers(HttpMethod.GET, "/api/courses", "/api/courses/**").hasAuthority("VIEW_COURSES")
                         .requestMatchers(HttpMethod.POST, "/api/courses").hasAuthority("MANAGE_COURSES")
                         .requestMatchers(HttpMethod.PUT, "/api/courses/**").hasAuthority("MANAGE_COURSES")

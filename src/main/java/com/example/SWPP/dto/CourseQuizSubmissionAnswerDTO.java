@@ -1,19 +1,22 @@
 package com.example.SWPP.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class CourseQuizSubmissionAnswerDTO {
     private Long id;
 
     private Long submissionId;
 
+    @NotNull(message = "Question ID is required")
     private Long questionId;
 
+    @NotNull(message = "Selected answer ID is required")
     private Long selectedAnswerId;
 
-    @NotBlank(message = "Selected answer is mandatory")
-    private String selectedAnswer;
+    // ✅ Thêm trường để trả nội dung câu trả lời về cho client (tùy chọn)
+    private String selectedAnswerText;
 
+    // --- GETTERS & SETTERS ---
     public Long getId() {
         return id;
     }
@@ -46,11 +49,11 @@ public class CourseQuizSubmissionAnswerDTO {
         this.selectedAnswerId = selectedAnswerId;
     }
 
-    public String getSelectedAnswer() {
-        return selectedAnswer;
+    public String getSelectedAnswerText() {
+        return selectedAnswerText;
     }
 
-    public void setSelectedAnswer(String selectedAnswer) {
-        this.selectedAnswer = selectedAnswer;
+    public void setSelectedAnswerText(String selectedAnswerText) {
+        this.selectedAnswerText = selectedAnswerText;
     }
 }
