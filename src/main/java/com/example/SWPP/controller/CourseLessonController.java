@@ -42,6 +42,12 @@ public class CourseLessonController {
                     .body(Map.of("message", e.getMessage()));
         }
     }
+    @GetMapping("/lessons/count")
+    public ResponseEntity<?> countLessons() {
+        logger.info("Counting total lessons");
+        long count = lessonService.countLessons();
+        return ResponseEntity.ok(Map.of("count", count));
+    }
 
     @PostMapping
     @PreAuthorize("hasAuthority('MANAGE_COURSES')")

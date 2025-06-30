@@ -49,6 +49,12 @@ public class CourseController {
                     .body(Map.of("message", "Failed to fetch courses"));
         }
     }
+    @GetMapping("/count")
+    @PreAuthorize("hasAuthority('MANAGE_COURSES')")
+    public ResponseEntity<?> getCourseCount() {
+        long count = courseService.countCourses(); // tối ưu hơn
+        return ResponseEntity.ok(Map.of("count", count));
+    }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('VIEW_COURSES')")

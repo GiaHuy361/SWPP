@@ -29,6 +29,11 @@ public class CertificateController {
         this.certificateService = certificateService;
         this.enrollmentRepository = enrollmentRepository;
     }
+    @GetMapping("/api/certificates/count")
+    public ResponseEntity<?> countCertificates() {
+        long count = certificateService.countCertificates();
+        return ResponseEntity.ok(Map.of("count", count));
+    }
 
     @PostMapping
     @PreAuthorize("hasAuthority('MANAGE_COURSES')")

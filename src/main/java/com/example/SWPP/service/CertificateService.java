@@ -40,4 +40,7 @@ public class CertificateService {
         return certificateRepository.findById(enrollmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Certificate not found for enrollment: " + enrollmentId));
     }
+    public long countCertificates() {
+        return certificateRepository.count();
+    }
 }

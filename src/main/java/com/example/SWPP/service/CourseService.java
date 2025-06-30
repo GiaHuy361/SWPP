@@ -116,4 +116,7 @@ public class CourseService {
                 return "Beginner";
         }
     }
+    public long countCourses() {
+        return courseRepository.count();
+    }
 }

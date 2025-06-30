@@ -42,6 +42,11 @@ public class CourseQuizController {
                     .body(Map.of("message", e.getMessage()));
         }
     }
+    @GetMapping("/quizzes/count")
+    public ResponseEntity<?> countAllQuizzes() {
+        long count = quizService.countAllQuizzes();
+        return ResponseEntity.ok(Map.of("count", count));
+    }
 
     @PostMapping
     @PreAuthorize("hasAuthority('MANAGE_COURSES')")

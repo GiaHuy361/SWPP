@@ -58,4 +58,7 @@ public class CourseLessonService {
                 .orElseThrow(() -> new IllegalArgumentException("Lesson not found: " + id));
         lessonRepository.delete(lesson);
     }
+    public long countLessons() {
+        return lessonRepository.count();
+    }
 }

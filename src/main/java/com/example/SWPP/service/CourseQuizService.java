@@ -58,4 +58,7 @@ public class CourseQuizService {
                 .orElseThrow(() -> new IllegalArgumentException("Quiz not found: " + id));
         quizRepository.delete(quiz);
     }
+    public long countAllQuizzes() {
+        return quizRepository.count();
+    }
 }
