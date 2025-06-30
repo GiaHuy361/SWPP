@@ -17,6 +17,10 @@ class SurveyService {
     return await apiClient.post(`${this.API_URL}/responses`, responseData, { withCredentials: true });
   }
 
+  async submitSurveyAndGetRecommendations(responseData) {
+    return await apiClient.post(`${this.API_URL}/responses/submit-and-recommend`, responseData, { withCredentials: true });
+  }
+
   async getUserResponsesAndAnalysis(surveyId = null) {
     return await apiClient.get(`${this.API_URL}/responses/user`, { params: { surveyId }, withCredentials: true });
   }
@@ -43,6 +47,7 @@ const surveyService = new SurveyService();
 export const getAllSurveys = surveyService.getAllSurveys.bind(surveyService);
 export const getSurveyById = surveyService.getSurveyById.bind(surveyService);
 export const submitSurveyResponse = surveyService.submitSurveyResponse.bind(surveyService);
+export const submitSurveyAndGetRecommendations = surveyService.submitSurveyAndGetRecommendations.bind(surveyService);
 export const getUserResponsesAndAnalysis = surveyService.getUserResponsesAndAnalysis.bind(surveyService);
 export const getSurveyResponseById = surveyService.getSurveyResponseById.bind(surveyService);
 export const getSurveyResult = surveyService.getSurveyResult.bind(surveyService);
