@@ -1,4 +1,3 @@
-
 package com.example.SWPP.dto;
 
 import com.example.SWPP.entity.Notification;

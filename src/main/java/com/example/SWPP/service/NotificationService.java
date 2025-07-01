@@ -1,13 +1,9 @@
-
-        package com.example.SWPP.service;
+package com.example.SWPP.service;
 
 import com.example.SWPP.dto.NotificationDTO;
 import com.example.SWPP.entity.*;
 import com.example.SWPP.mapper.NotificationMapper;
-import com.example.SWPP.repository.AppointmentRepository;
-import com.example.SWPP.repository.CourseQuizSubmissionRepository;
 import com.example.SWPP.repository.NotificationRepository;
-import com.example.SWPP.repository.SurveyResponseRepository;
 import com.example.SWPP.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,15 +21,6 @@ public class NotificationService {
 
     @Autowired
     private NotificationRepository notificationRepository;
-
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-
-    @Autowired
-    private CourseQuizSubmissionRepository quizSubmissionRepository;
-
-    @Autowired
-    private SurveyResponseRepository surveyResponseRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -72,51 +59,6 @@ public class NotificationService {
             Notification savedNotification = notificationRepository.save(notification);
             return List.of(notificationMapper.toNotificationDTO(savedNotification));
         }
-    }
-
-    @Transactional
-    public void createAppointmentNotification(Appointment appointment) {
-        logger.info("Creating appointment notification for appointmentId={}", appointment.getAppointmentId());
-        Notification userNotification = new Notification(
-                appointment.getUser(),
-                "Cuộc hẹn mới",
-                "Bạn đã đặt một cuộc hẹn với " + appointment.getConsultant().getUser().getFullName() + " vào lúc " + appointment.getAppointmentTime(),
-                Notification.NotificationType.APPOINTMENT
-        );
-        Notification consultantNotification = new Notification(
-                appointment.getConsultant().getUser(),
-                "Cuộc hẹn mới",
-                "Bạn có một cuộc hẹn với " + appointment.getUser().getFullName() + " vào lúc " + appointment.getAppointmentTime(),
-                Notification.NotificationType.APPOINTMENT
-        );
-        notificationRepository.save(userNotification);
-        notificationRepository.save(consultantNotification);
-    }
-
-    @Transactional
-    public void createQuizSubmissionNotification(CourseQuizSubmission submission) {
-        logger.info("Creating quiz submission notification for submissionId={}", submission.getId());
-        if (submission.getPassed()) {
-            Notification notification = new Notification(
-                    submission.getUser(),
-                    "Chúc mừng hoàn thành bài kiểm tra!",
-                    "Bạn đã đạt " + submission.getPercentageScore() + "% trong bài kiểm tra của khóa học " + submission.getQuiz().getCourse().getTitle(),
-                    Notification.NotificationType.QUIZ_RESULT
-            );
-            notificationRepository.save(notification);
-        }
-    }
-
-    @Transactional
-    public void createSurveyResponseNotification(SurveyResponse response) {
-        logger.info("Creating survey response notification for responseId={}", response.getId());
-        Notification notification = new Notification(
-                response.getUser(),
-                "Hoàn thành khảo sát",
-                "Bạn đã hoàn thành khảo sát '" + response.getSurvey().getTitle() + "'. Kết quả: " + response.getRiskLevel(),
-                Notification.NotificationType.SURVEY
-        );
-        notificationRepository.save(notification);
     }
 
     public List<NotificationDTO> getUserNotifications(Long userId) {

@@ -1,4 +1,3 @@
-
 package com.example.SWPP.mapper;
 
 import com.example.SWPP.dto.NotificationDTO;
@@ -21,7 +20,7 @@ public class NotificationMapper {
                 notification.getType(),
                 notification.getIsRead(),
                 notification.getCreatedAt(),
-                false // isSystemNotification luôn là false vì không lưu trong entity
+                notification.getType() == Notification.NotificationType.SYSTEM // Đặt isSystemNotification dựa trên type
         );
     }
 

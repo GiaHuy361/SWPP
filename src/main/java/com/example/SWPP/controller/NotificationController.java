@@ -1,5 +1,4 @@
-
-        package com.example.SWPP.controller;
+package com.example.SWPP.controller;
 
 import com.example.SWPP.dto.NotificationDTO;
 import com.example.SWPP.entity.User;
