@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSurveyResponseById, getSurveyResult, getUserResponsesAndAnalysis, submitSurveyAndGetRecommendations } from '../services/surveyService';
 import { getUserProfile } from '../services/profileService';
-import { getAllCourses } from '../services/courseService';
 import { toast } from 'react-toastify';
 import { FiRefreshCw } from 'react-icons/fi';
 import { FaRegSmile, FaRegMeh, FaRegFrown } from 'react-icons/fa';
@@ -125,13 +123,6 @@ function SurveyResults() {
     }
   };
 
-  // Hàm sửa riskLevel dựa trên totalScore
-  const fixRiskLevel = (totalScore) => {
-    if (totalScore <= 10) return 'Low Risk';
-    if (totalScore <= 20) return 'Moderate Risk';
-    return 'High Risk';
-  };
-
   const fetchResults = async () => {
     try {
       setLoading(true);
@@ -146,13 +137,6 @@ function SurveyResults() {
         try {
           resultData = await getSurveyResult(id);
           console.log('Result data:', JSON.stringify(resultData.data, null, 2));
-
-          // Sửa riskLevel nếu không hợp lệ
-          const fixedRiskLevel = fixRiskLevel(resultData.data.totalScore || 0);
-          if (resultData.data.riskLevel !== fixedRiskLevel) {
-            console.log(`Fixing riskLevel from ${resultData.data.riskLevel} to ${fixedRiskLevel} for totalScore=${resultData.data.totalScore}`);
-            resultData.data.riskLevel = fixedRiskLevel;
-          }
           setResult(resultData.data);
 
           // Gọi API submit-and-recommend để lấy khóa học đề xuất
@@ -165,7 +149,7 @@ function SurveyResults() {
               userId: user.userId,
               submittedAt: new Date().toISOString(),
               totalScore: resultData.data.totalScore || 0,
-              riskLevel: fixedRiskLevel,
+              riskLevel: resultData.data.riskLevel,
               answers: responseData.data.answers?.map(answer => ({
                 questionId: answer.questionId,
                 optionId: answer.optionId,
@@ -179,87 +163,24 @@ function SurveyResults() {
 
             // Kiểm tra trạng thái đăng ký
             const enrolledCourses = await axios.get('/enrollments/user').then(res => res.data?.map(e => e.courseId) || []);
-
-            let coursesWithEnrollment = (coursesData.data.courses || []).map(course => ({
+            const coursesWithEnrollment = (coursesData.data.courses || []).map(course => ({
               ...course,
               isEnrolled: enrolledCourses.includes(course.id)
             }));
-
-            // Dự phòng: Nếu API trả về rỗng hoặc sai (quá nhiều khóa học), lọc thủ công
-            if (coursesWithEnrollment.length === 0 || coursesWithEnrollment.length > 1) {
-              const allCoursesRes = await getAllCourses();
-              const allCourses = allCoursesRes.data || [];
-              const riskLevel = fixedRiskLevel.toLowerCase();
-              const courseLevel = riskLevel.includes('high') || riskLevel.includes('cao') ? 'Advanced' :
-                                 riskLevel.includes('moderate') || riskLevel.includes('trung bình') ? 'Intermediate' : 'Beginner';
-              coursesWithEnrollment = allCourses.filter(course =>
-                course.recommendedMinScore <= resultData.data.totalScore &&
-                course.recommendedMaxScore >= resultData.data.totalScore &&
-                course.level === courseLevel
-              ).map(course => ({
-                ...course,
-                isEnrolled: enrolledCourses.includes(course.id)
-              }));
-              if (coursesWithEnrollment.length === 0) {
-                toast.warn(`Không tìm thấy khóa học phù hợp cho điểm ${resultData.data.totalScore} và mức rủi ro ${fixedRiskLevel}. Vui lòng kiểm tra ngưỡng điểm.`);
-              } else {
-                toast.info(`Đã lọc thủ công ${coursesWithEnrollment.length} khóa học phù hợp`);
-              }
-            }
             setRecommendedCourses(coursesWithEnrollment);
+
+            if (coursesWithEnrollment.length === 0) {
+              toast.warn(`Không tìm thấy khóa học phù hợp cho mức rủi ro ${resultData.data.riskLevel || 'Chưa xác định'}. Vui lòng kiểm tra dữ liệu khóa học.`);
+            }
           } catch (coursesError) {
             console.error('Courses error:', coursesError);
-            toast.warn('Không thể tải danh sách khóa học đề xuất từ API, thử lọc thủ công...');
-            // Dự phòng: Lấy tất cả khóa học và lọc thủ công
-            const allCoursesRes = await getAllCourses();
-            const allCourses = allCoursesRes.data || [];
-            const enrolledCourses = await axios.get('/enrollments/user').then(res => res.data?.map(e => e.courseId) || []);
-            const riskLevel = fixedRiskLevel.toLowerCase();
-            const courseLevel = riskLevel.includes('high') || riskLevel.includes('cao') ? 'Advanced' :
-                               riskLevel.includes('moderate') || riskLevel.includes('trung bình') ? 'Intermediate' : 'Beginner';
-            const filteredCourses = allCourses.filter(course =>
-              course.recommendedMinScore <= resultData.data.totalScore &&
-              course.recommendedMaxScore >= resultData.data.totalScore &&
-              course.level === courseLevel
-            ).map(course => ({
-              ...course,
-              isEnrolled: enrolledCourses.includes(course.id)
-            }));
-            setRecommendedCourses(filteredCourses);
-            if (filteredCourses.length === 0) {
-              toast.warn(`Không tìm thấy khóa học phù hợp cho điểm ${resultData.data.totalScore} và mức rủi ro ${fixedRiskLevel}. Vui lòng kiểm tra ngưỡng điểm.`);
-            } else {
-              toast.info(`Đã lọc thủ công ${filteredCourses.length} khóa học phù hợp`);
-            }
+            toast.error('Không thể tải danh sách khóa học đề xuất từ API.');
+            setRecommendedCourses([]);
           }
         } catch (resultError) {
           console.log('Result error:', resultError);
-          if (resultError.response?.status === 404) {
-            setResult({
-              totalScore: responseData.data.totalScore || 0,
-              riskLevel: fixRiskLevel(responseData.data.totalScore || 0),
-              maxScore: responseData.data.survey?.surveyType?.maxScore || 100
-            });
-            // Dự phòng: Lấy tất cả khóa học và lọc thủ công
-            const allCoursesRes = await getAllCourses();
-            const allCourses = allCoursesRes.data || [];
-            const enrolledCourses = await axios.get('/enrollments/user').then(res => res.data?.map(e => e.courseId) || []);
-            const riskLevel = fixRiskLevel(responseData.data.totalScore || 0).toLowerCase();
-            const courseLevel = riskLevel.includes('high') || riskLevel.includes('cao') ? 'Advanced' :
-                               riskLevel.includes('moderate') || riskLevel.includes('trung bình') ? 'Intermediate' : 'Beginner';
-            const filteredCourses = allCourses.filter(course =>
-              course.recommendedMinScore <= (responseData.data.totalScore || 0) &&
-              course.recommendedMaxScore >= (responseData.data.totalScore || 0) &&
-              course.level === courseLevel
-            ).map(course => ({
-              ...course,
-              isEnrolled: enrolledCourses.includes(course.id)
-            }));
-            setRecommendedCourses(filteredCourses);
-            toast.warn('Không thể tính điểm khảo sát do dữ liệu không đầy đủ. Đã lọc thủ công khóa học.');
-          } else {
-            throw resultError;
-          }
+          setError('Không thể tính điểm khảo sát.');
+          toast.error('Không thể tính điểm khảo sát.');
         }
       } else {
         const analysisData = await getUserResponsesAndAnalysis();
@@ -271,31 +192,14 @@ function SurveyResults() {
             getSurveyResponseById(latestResponseId),
             getSurveyResult(latestResponseId).catch(err => {
               console.log('Result error for latest response:', err);
-              if (err.response?.status === 404) {
-                return {
-                  data: {
-                    totalScore: responseData?.data?.totalScore || 0,
-                    riskLevel: fixRiskLevel(responseData?.data?.totalScore || 0),
-                    maxScore: responseData?.data?.survey?.surveyType?.maxScore || 100
-                  }
-                };
-              }
               throw err;
             })
           ]);
           console.log('Latest response data:', JSON.stringify(responseData.data, null, 2));
           console.log('Latest result data:', JSON.stringify(resultData.data, null, 2));
-
-          // Sửa riskLevel nếu không hợp lệ
-          const fixedRiskLevel = fixRiskLevel(resultData.data.totalScore || 0);
-          if (resultData.data.riskLevel !== fixedRiskLevel) {
-            console.log(`Fixing riskLevel from ${resultData.data.riskLevel} to ${fixedRiskLevel} for totalScore=${resultData.data.totalScore}`);
-            resultData.data.riskLevel = fixedRiskLevel;
-          }
           setResponse(responseData.data);
           setResult(resultData.data);
 
-          // Gọi API submit-and-recommend cho phản hồi mới nhất
           try {
             if (!responseData.data || !responseData.data.surveyId) {
               throw new Error('Dữ liệu phản hồi khảo sát không hợp lệ hoặc thiếu surveyId');
@@ -305,7 +209,7 @@ function SurveyResults() {
               userId: user.userId,
               submittedAt: new Date().toISOString(),
               totalScore: resultData.data.totalScore || 0,
-              riskLevel: fixedRiskLevel,
+              riskLevel: resultData.data.riskLevel,
               answers: responseData.data.answers?.map(answer => ({
                 questionId: answer.questionId,
                 optionId: answer.optionId,
@@ -317,59 +221,20 @@ function SurveyResults() {
             coursesData = await submitSurveyAndGetRecommendations(surveyResponseDTO);
             console.log('Recommended courses:', JSON.stringify(coursesData.data, null, 2));
 
-            // Kiểm tra trạng thái đăng ký
             const enrolledCourses = await axios.get('/enrollments/user').then(res => res.data?.map(e => e.courseId) || []);
-            let coursesWithEnrollment = (coursesData.data.courses || []).map(course => ({
+            const coursesWithEnrollment = (coursesData.data.courses || []).map(course => ({
               ...course,
               isEnrolled: enrolledCourses.includes(course.id)
             }));
-
-            // Dự phòng: Nếu API trả về rỗng hoặc sai, lọc thủ công
-            if (coursesWithEnrollment.length === 0 || coursesWithEnrollment.length > 1) {
-              const allCoursesRes = await getAllCourses();
-              const allCourses = allCoursesRes.data || [];
-              const riskLevel = fixedRiskLevel.toLowerCase();
-              const courseLevel = riskLevel.includes('high') || riskLevel.includes('cao') ? 'Advanced' :
-                                 riskLevel.includes('moderate') || riskLevel.includes('trung bình') ? 'Intermediate' : 'Beginner';
-              coursesWithEnrollment = allCourses.filter(course =>
-                course.recommendedMinScore <= resultData.data.totalScore &&
-                course.recommendedMaxScore >= resultData.data.totalScore &&
-                course.level === courseLevel
-              ).map(course => ({
-                ...course,
-                isEnrolled: enrolledCourses.includes(course.id)
-              }));
-              if (coursesWithEnrollment.length === 0) {
-                toast.warn(`Không tìm thấy khóa học phù hợp cho điểm ${resultData.data.totalScore} và mức rủi ro ${fixedRiskLevel}. Vui lòng kiểm tra ngưỡng điểm.`);
-              } else {
-                toast.info(`Đã lọc thủ công ${coursesWithEnrollment.length} khóa học phù hợp`);
-              }
-            }
             setRecommendedCourses(coursesWithEnrollment);
+
+            if (coursesWithEnrollment.length === 0) {
+              toast.warn(`Không tìm thấy khóa học phù hợp cho mức rủi ro ${resultData.data.riskLevel || 'Chưa xác định'}. Vui lòng kiểm tra dữ liệu khóa học.`);
+            }
           } catch (coursesError) {
             console.error('Courses error:', coursesError);
-            toast.warn('Không thể tải danh sách khóa học đề xuất từ API, thử lọc thủ công...');
-            // Dự phòng: Lấy tất cả khóa học và lọc thủ công
-            const allCoursesRes = await getAllCourses();
-            const allCourses = allCoursesRes.data || [];
-            const enrolledCourses = await axios.get('/enrollments/user').then(res => res.data?.map(e => e.courseId) || []);
-            const riskLevel = fixedRiskLevel.toLowerCase();
-            const courseLevel = riskLevel.includes('high') || riskLevel.includes('cao') ? 'Advanced' :
-                               riskLevel.includes('moderate') || riskLevel.includes('trung bình') ? 'Intermediate' : 'Beginner';
-            const filteredCourses = allCourses.filter(course =>
-              course.recommendedMinScore <= resultData.data.totalScore &&
-              course.recommendedMaxScore >= resultData.data.totalScore &&
-              course.level === courseLevel
-            ).map(course => ({
-              ...course,
-              isEnrolled: enrolledCourses.includes(course.id)
-            }));
-            setRecommendedCourses(filteredCourses);
-            if (filteredCourses.length === 0) {
-              toast.warn(`Không tìm thấy khóa học phù hợp cho điểm ${resultData.data.totalScore} và mức rủi ro ${fixedRiskLevel}. Vui lòng kiểm tra ngưỡng điểm.`);
-            } else {
-              toast.info(`Đã lọc thủ công ${filteredCourses.length} khóa học phù hợp`);
-            }
+            toast.error('Không thể tải danh sách khóa học đề xuất từ API.');
+            setRecommendedCourses([]);
           }
         } else {
           setResult({ totalScore: 0, riskLevel: 'Chưa có kết quả', maxScore: 100 });
@@ -437,16 +302,19 @@ function SurveyResults() {
   const getRiskRecommendation = (riskLevel) => {
     if (!riskLevel) return 'Không có dữ liệu để đưa ra khuyến nghị.';
     const level = riskLevel.toLowerCase();
-    if (level.includes('high') || level.includes('cao')) return 'Bạn đang ở mức nguy cơ cao. Hãy đặt lịch tư vấn với chuyên gia ngay để được hỗ trợ kịp thời.';
-    if (level.includes('moderate') || level.includes('trung bình')) return 'Bạn đang ở mức nguy cơ trung bình. Hãy theo dõi thói quen của mình và cân nhắc tư vấn nếu cần.';
-    if (level.includes('low') || level.includes('thấp')) return 'Bạn đang ở mức nguy cơ thấp. Hãy tiếp tục duy trì thói quen lành mạnh.';
+    if (level.includes('high') || level.includes('cao')) 
+      return 'Bạn cần học các khóa cơ bản để hiểu rõ hơn về phòng chống ma túy. Hãy bắt đầu với khóa học được đề xuất.';
+    if (level.includes('moderate') || level.includes('trung bình')) 
+      return 'Bạn nên củng cố kiến thức với các khóa trung cấp để quản lý rủi ro tốt hơn.';
+    if (level.includes('low') || level.includes('thấp')) 
+      return 'Bạn đã nắm vững kiến thức cơ bản. Hãy thử các khóa nâng cao để hỗ trợ người khác hiệu quả hơn.';
     return 'Không có dữ liệu để đưa ra khuyến nghị.';
   };
 
   // Animate progress bar
   useEffect(() => {
     const score = result?.totalScore || response?.totalScore || 0;
-    const maxScore = result?.maxScore || response?.surveyType?.maxScore || 100;
+    const maxScore = result?.maxScore || response?.survey?.surveyType?.maxScore || 100;
     const scorePercentage = maxScore ? (score / maxScore) * 100 : 0;
     if (!loading && scorePercentage) {
       setProgress(0);
@@ -507,7 +375,7 @@ function SurveyResults() {
   const riskColor = getRiskLevelColor(result?.riskLevel || userAnalysis?.riskLevel);
   const riskLevel = result?.riskLevel || userAnalysis?.riskLevel;
   const score = result?.totalScore || response?.totalScore || 0;
-  const maxScore = result?.maxScore || response?.surveyType?.maxScore || 100;
+  const maxScore = result?.maxScore || response?.survey?.surveyType?.maxScore || 100;
   const scorePercentage = maxScore ? (score / maxScore) * 100 : 0;
   const isHighRisk = riskLevel?.toLowerCase().includes('high') || riskLevel?.toLowerCase().includes('cao');
 
@@ -584,12 +452,11 @@ function SurveyResults() {
           </div>
         </div>
 
-        {/* Section khóa học đề xuất */}
         <div className="mt-10">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Khóa học đề xuất cho bạn</h2>
           {recommendedCourses.length === 0 ? (
             <div className="text-gray-500 text-center p-6 bg-white rounded-xl shadow">
-              Không tìm thấy khóa học phù hợp dựa trên kết quả khảo sát (Điểm: {score}, Mức rủi ro: {riskLevel || 'Chưa xác định'}). Vui lòng kiểm tra ngưỡng điểm hoặc làm lại khảo sát.
+              Không tìm thấy khóa học phù hợp cho mức rủi ro {riskLevel || 'Chưa xác định'}. Vui lòng kiểm tra dữ liệu khóa học hoặc làm lại khảo sát.
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-8">
@@ -599,8 +466,7 @@ function SurveyResults() {
                     <div className="text-xl font-semibold text-blue-700 mb-2">{course.title || 'Chưa có tên khóa học'}</div>
                     <div className="text-gray-600 mb-2">{course.description || 'Chưa có mô tả'}</div>
                     <div className="text-sm text-gray-400 mb-2">Độ khó: <span className="font-medium text-blue-600">{course.level || 'Không xác định'}</span></div>
-                    <div className="text-sm text-gray-400 mb-2">Đối tượng: {course.ageGroup || 'Không xác định'}</div>
-                    <div className="text-sm text-gray-400">Điểm phù hợp: {typeof course.recommendedMinScore === 'number' && typeof course.recommendedMaxScore === 'number' ? `${course.recommendedMinScore} - ${course.recommendedMaxScore}` : '-'}</div>
+                    <div className="text-sm text-gray-400">Đối tượng: {course.ageGroup || 'Không xác định'}</div>
                     {course.isEnrolled && (
                       <div className="text-sm text-green-600 mt-2">✓ Đã đăng ký</div>
                     )}
