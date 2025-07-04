@@ -36,6 +36,7 @@ function Header() {
   const canViewSurveys = user && user.permissions?.includes('VIEW_SURVEYS');
   const canManageRoles = user && user.permissions?.includes('MANAGE_ROLES');
   const canManageUsers = user && user.permissions?.includes('MANAGE_USERS');
+  const canManageSurveys = user && user.permissions?.includes('MANAGE_SURVEYS');
 
   return (
     <header
@@ -83,7 +84,7 @@ function Header() {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
-            {(isAdmin || canManageUsers || canManageRoles) && (
+            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys) && (
               <div className="relative group">
                 <button className="flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 rounded-full p-2.5 w-10 h-10">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -127,6 +128,14 @@ function Header() {
                         Quản lý khóa học
                       </Link>
                     </>
+                  )}
+                  {canManageSurveys && (
+                    <Link to="/surveys/manage" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                      Quản lý khảo sát
+                    </Link>
                   )}
                 </div>
               </div>
@@ -245,7 +254,7 @@ function Header() {
                 Lịch hẹn của tôi
               </Link>
             )}
-            {(isAdmin || canManageUsers || canManageRoles) && (
+            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys) && (
               <>
                 <div className="py-2.5 text-gray-700 text-lg font-medium">
                   Quản lý tài khoản:
@@ -297,6 +306,18 @@ function Header() {
                       Quản lý khóa học
                     </Link>
                   </>
+                )}
+                {canManageSurveys && (
+                  <Link
+                    to="/surveys/manage"
+                    className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    Quản lý khảo sát
+                  </Link>
                 )}
               </>
             )}

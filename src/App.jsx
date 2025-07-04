@@ -7,12 +7,12 @@ import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
+import HomePage from './pages/HomePage'; // Đảm bảo import
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import CreateUserPage from './pages/CreateUserPage';
 import Profile from './pages/Profile';
-import SurveyDetail from './pages/SurveyDetail';
+import SurveyDetail from './pages/SurveyDetail'; // Đảm bảo import
 import BookAppointment from './pages/BookAppointment';
 import ManageAppointments from './pages/ManageAppointments';
 import AppointmentDetail from './pages/AppointmentDetail';
@@ -29,7 +29,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import ContactPage from './pages/ContactPage';
 import MyAppointments from './pages/MyAppointments';
 import EnrollCoursePage from './pages/courses/EnrollCoursePage';
-import CoursePage from './pages/courses/CoursePage';
+import CoursePage from './pages/courses/CoursePage'; // Đảm bảo import
 import CourseListPage from './pages/courses/CourseListPage';
 import EnrollCourseListPage from './pages/courses/EnrollCourseListPage';
 import MyCoursesPage from './pages/courses/MyCoursesPage';
@@ -45,6 +45,11 @@ import StudentManagement from './pages/admin/StudentManagement';
 import CertificateManagement from './pages/admin/CertificateManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import RegisterPage from './pages/RegisterPage';
+import SurveyManagement from './pages/SurveyManagement'; // Thêm import
+import SurveyTypeManagement from './pages/SurveyTypeManagement'; // Thêm import
+import SurveyListManagement from './pages/SurveyListManagement'; // Thêm import
+import SurveyQuestionManagement from './pages/SurveyQuestionManagement'; // Thêm import
+import SurveyOptionManagement from './pages/SurveyOptionManagement'; // Thêm import
 
 function App() {
   return (
@@ -54,7 +59,7 @@ function App() {
           <Header />
           <main className="flex-grow pt-16">
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<HomePage />} /> {/* Giữ nguyên như phiên bản cũ */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -63,7 +68,7 @@ function App() {
               <Route path="/user-dashboard" element={<UserDashboard />} />
               <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
               <Route path="/surveys" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><Surveys /></PrivateRoute>} />
-              <Route path="/surveys/:id" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyDetail /></PrivateRoute>} />
+              <Route path="/surveys/:id" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyDetail /></PrivateRoute>} /> {/* Giữ nguyên như phiên bản cũ */}
               <Route path="/survey-results" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyResults /></PrivateRoute>} />
               <Route path="/survey-results/:id" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyResults /></PrivateRoute>} />
               <Route path="/book-appointment" element={<PrivateRoute requiredPermission="BOOK_APPOINTMENTS"><BookAppointment /></PrivateRoute>} />
@@ -75,9 +80,9 @@ function App() {
               <Route path="/edit-user/:id" element={<PrivateRoute requiredPermission="MANAGE_USERS"><EditUserPage /></PrivateRoute>} />
               <Route path="/role-permissions" element={<PrivateRoute requiredPermission="MANAGE_ROLES"><RolePermissionPage /></PrivateRoute>} />
               <Route path="/courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CourseListPage /></PrivateRoute>} />
-              <Route path="/courses/:courseId/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCoursePage /></PrivateRoute>} />
+              <Route path="/courses/:courseId/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCoursePage /></PrivateRoute>} /> {/* Giữ nguyên */}
               <Route path="/courses/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCourseListPage /></PrivateRoute>} />
-              <Route path="/courses/:courseId/*" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CoursePage /></PrivateRoute>} />
+              <Route path="/courses/:courseId/*" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CoursePage /></PrivateRoute>} /> {/* Giữ nguyên như phiên bản cũ */}
               <Route path="/my-courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><MyCoursesPage /></PrivateRoute>} />
               <Route path="/certificate/:courseId" element={<CertificatePage />} />
               
@@ -94,9 +99,16 @@ function App() {
               <Route path="/admin/courses/:courseId/students" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><StudentManagement /></PrivateRoute>} />
               <Route path="/admin/courses/:courseId/certificates" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><CertificateManagement /></PrivateRoute>} />
               
+              {/* Thêm route quản lý khảo sát */}
+              <Route path="/surveys/manage" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyManagement /></PrivateRoute>} />
+              <Route path="/surveys/manage/types" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyTypeManagement /></PrivateRoute>} />
+              <Route path="/surveys/manage/list" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyListManagement /></PrivateRoute>} />
+              <Route path="/surveys/manage/questions" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyQuestionManagement /></PrivateRoute>} />
+              <Route path="/surveys/manage/options" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyOptionManagement /></PrivateRoute>} />
+
               <Route path="/access-denied" element={<AccessDenied />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="*" element={<NotFoundPage />} />
+              <Route path="*" element={<NotFoundPage />} /> {/* Fallback */}
             </Routes>
           </main>
           <Footer />
@@ -107,4 +119,4 @@ function App() {
   );
 }
 
-export default App;
+export default App
