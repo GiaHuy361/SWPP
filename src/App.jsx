@@ -82,17 +82,17 @@ function App() {
               <Route path="/certificate/:courseId" element={<CertificatePage />} />
               
               {/* Admin Course Management Routes */}
-              <Route path="/admin" element={<PrivateRoute requiredPermission="ROLE_Admin"><AdminDashboard /></PrivateRoute>} />
-              <Route path="/admin/dashboard" element={<PrivateRoute requiredPermission="ROLE_Admin"><AdminDashboard /></PrivateRoute>} />
-              <Route path="/admin/courses" element={<PrivateRoute requiredPermission="ROLE_Admin"><CourseManagement /></PrivateRoute>} />
-              <Route path="/admin/courses/create" element={<PrivateRoute requiredPermission="ROLE_Admin"><CourseForm /></PrivateRoute>} />
-              <Route path="/admin/courses/:courseId" element={<PrivateRoute requiredPermission="ROLE_Admin"><CourseDetail /></PrivateRoute>} />
-              <Route path="/admin/courses/:courseId/edit" element={<PrivateRoute requiredPermission="ROLE_Admin"><CourseForm /></PrivateRoute>} />
-              <Route path="/admin/courses/:courseId/modules" element={<PrivateRoute requiredPermission="ROLE_Admin"><ModuleManagement /></PrivateRoute>} />
-              <Route path="/admin/courses/:courseId/modules/:moduleId/lessons" element={<PrivateRoute requiredPermission="ROLE_Admin"><LessonManagement /></PrivateRoute>} />
-              <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/:lessonId/quizzes" element={<PrivateRoute requiredPermission="ROLE_Admin"><QuizManagement /></PrivateRoute>} />
-              <Route path="/admin/courses/:courseId/students" element={<PrivateRoute requiredPermission="ROLE_Admin"><StudentManagement /></PrivateRoute>} />
-              <Route path="/admin/courses/:courseId/certificates" element={<PrivateRoute requiredPermission="ROLE_Admin"><CertificateManagement /></PrivateRoute>} />
+              <Route path="/admin" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><AdminDashboard /></PrivateRoute>} />
+              <Route path="/admin/dashboard" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><AdminDashboard /></PrivateRoute>} />
+              <Route path="/admin/courses" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><CourseManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/create" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><CourseForm /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><CourseDetail /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/edit" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><CourseForm /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><ModuleManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules/:moduleId/lessons" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><LessonManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/:lessonId/quizzes" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><QuizManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/students" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><StudentManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/certificates" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><CertificateManagement /></PrivateRoute>} />
               
               <Route path="/access-denied" element={<AccessDenied />} />
               <Route path="/register" element={<RegisterPage />} />
