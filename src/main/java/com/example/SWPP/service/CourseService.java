@@ -80,20 +80,18 @@ public class CourseService {
         if (!response.getUser().getUserId().equals(userId)) {
             throw new IllegalArgumentException("Survey response does not belong to the user");
         }
-        int totalScore = response.getTotalScore();
         String riskLevel = response.getRiskLevel();
         String courseLevel = mapRiskLevelToCourseLevel(riskLevel);
 
         logger.debug("UserId: {}, TotalScore: {}, RiskLevel: {}, CourseLevel: {}",
-                userId, totalScore, riskLevel, courseLevel);
+                userId, response.getTotalScore(), riskLevel, courseLevel);
 
-        List<Course> courses = courseRepository.findByRecommendedMinScoreLessThanEqualAndRecommendedMaxScoreGreaterThanEqualAndLevel(
-                totalScore, totalScore, courseLevel);
+        List<Course> courses = courseRepository.findByLevel(courseLevel);
 
         if (courses.isEmpty()) {
-            logger.warn("No courses found for score={}, level={}", totalScore, courseLevel);
+            logger.warn("No courses found for level={}", courseLevel);
         } else {
-            logger.info("Found {} courses for score={}, level={}", courses.size(), totalScore, courseLevel);
+            logger.info("Found {} courses for level={}", courses.size(), courseLevel);
         }
 
         return courses;
@@ -106,11 +104,11 @@ public class CourseService {
         }
         switch (riskLevel) {
             case "Low Risk":
-                return "Beginner";
+                return "Advanced";
             case "Moderate Risk":
                 return "Intermediate";
             case "High Risk":
-                return "Advanced";
+                return "Beginner";
             default:
                 logger.warn("Unknown riskLevel: {}, defaulting to Beginner", riskLevel);
                 return "Beginner";
