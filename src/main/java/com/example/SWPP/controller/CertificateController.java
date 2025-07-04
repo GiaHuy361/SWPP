@@ -6,6 +6,7 @@ import com.example.SWPP.entity.Enrollment;
 import com.example.SWPP.mapper.CertificateMapper;
 import com.example.SWPP.repository.EnrollmentRepository;
 import com.example.SWPP.service.CertificateService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -14,11 +15,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/enrollments/{enrollmentId}/certificates")
+@RequestMapping("/api/certificates")
 public class CertificateController {
     private static final Logger logger = LoggerFactory.getLogger(CertificateController.class);
 
@@ -29,13 +29,16 @@ public class CertificateController {
         this.certificateService = certificateService;
         this.enrollmentRepository = enrollmentRepository;
     }
-    @GetMapping("/api/certificates/count")
+
+    // ✅ GET: Đếm số lượng chứng chỉ
+    @GetMapping("/count")
     public ResponseEntity<?> countCertificates() {
         long count = certificateService.countCertificates();
         return ResponseEntity.ok(Map.of("count", count));
     }
 
-    @PostMapping
+    // ✅ POST: Cấp chứng chỉ dựa trên enrollmentId
+    @PostMapping("/enrollments/{enrollmentId}")
     @PreAuthorize("hasAuthority('MANAGE_COURSES')")
     public ResponseEntity<?> issueCertificate(@PathVariable Long enrollmentId, Authentication authentication) {
         logger.info("Issuing certificate for enrollmentId={}", enrollmentId);
@@ -51,7 +54,8 @@ public class CertificateController {
         }
     }
 
-    @GetMapping
+    // ✅ GET: Lấy chứng chỉ theo enrollmentId
+    @GetMapping("/enrollments/{enrollmentId}")
     @PreAuthorize("hasAuthority('VIEW_CERTIFICATES')")
     public ResponseEntity<?> getCertificateByEnrollmentId(@PathVariable Long enrollmentId, Authentication authentication) {
         logger.info("Retrieving certificate for enrollmentId={}", enrollmentId);
