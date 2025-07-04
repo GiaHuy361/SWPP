@@ -11,11 +11,11 @@ function UserDashboard() {
 
   const getRoleDescription = (role) => {
     const roleDescriptions = {
-      Admin: 'Bạn có toàn quyền quản lý người dùng, vai trò và phân quyền.',
-      Consultant: 'Bạn có thể quản lý lịch hẹn và cập nhật link Google Meet.',
-      Member: 'Bạn có thể làm khảo sát, xem kết quả, và đặt lịch tư vấn.',
-      Guest: 'Bạn có thể xem thông tin cơ bản và tham gia các chương trình.',
-      Staff: 'Bạn có thể quản lý khảo sát và khóa học.',
+      Admin: 'Bạn có quyền quản trị toàn bộ hệ thống, bao gồm người dùng, khóa học, và cài đặt.',
+      Staff: 'Bạn có thể quản lý khóa học, module, bài học và hỗ trợ học viên.',
+      Consultant: 'Bạn có thể xem và trả lời các cuộc hẹn tư vấn, cung cấp hỗ trợ chuyên môn cho người dùng.',
+      Member: 'Bạn có thể tham gia khóa học, làm bài kiểm tra, đặt lịch hẹn tư vấn.',
+      Guest: 'Bạn có thể xem nội dung cơ bản và đăng ký tài khoản.',
       Manager: 'Bạn có thể quản lý chương trình, khóa học, và tư vấn viên.'
     };
     return roleDescriptions[role] || 'Không có mô tả vai trò.';
@@ -44,6 +44,14 @@ function UserDashboard() {
         </div>
 
         <div className="mt-6 space-y-2">
+          {(user.role === 'Admin' || user.role === 'Staff' || user.role === 'Manager') && (
+            <Link 
+              to="/admin/courses" 
+              className="block px-6 py-2 bg-[#1976d2] text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Quản lý khóa học
+            </Link>
+          )}
           {user.permissions.includes('VIEW_SURVEYS') && (
             <Link 
               to="/surveys" 
