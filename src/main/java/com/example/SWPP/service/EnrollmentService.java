@@ -56,4 +56,7 @@ public class EnrollmentService {
                 .filter(enrollment -> enrollment.getUser().getUserId().equals(userId))
                 .toList();
     }
+    public long countUniqueEnrolledUsers() {
+        return enrollmentRepository.countDistinctEnrolledUsers();
+    }
 }

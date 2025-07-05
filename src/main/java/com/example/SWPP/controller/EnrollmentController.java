@@ -32,6 +32,13 @@ public class EnrollmentController {
         this.userRepository = userRepository;
     }
 
+    @GetMapping("/count")
+    @PreAuthorize("hasAuthority('MANAGE_ENROLLMENTS')")
+    public ResponseEntity<?> getUniqueEnrolledUsersCount() {
+        long count = enrollmentService.countUniqueEnrolledUsers();
+        return ResponseEntity.ok(Map.of("count", count));
+    }
+
     @PostMapping("/courses/{courseId}")
     @PreAuthorize("hasAuthority('ENROLL_COURSES')")
     public ResponseEntity<?> enrollUser(@PathVariable Long courseId, Authentication authentication) {
