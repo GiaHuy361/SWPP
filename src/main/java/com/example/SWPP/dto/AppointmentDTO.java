@@ -19,6 +19,9 @@ public class AppointmentDTO {
     private String meetLink;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
+    // Thêm các trường mới
+    private String consultantQualification;
+    private Integer consultantExperienceYears;
 
     // Constructors
     public AppointmentDTO() {}
@@ -46,4 +49,9 @@ public class AppointmentDTO {
     public void setMeetLink(String meetLink) { this.meetLink = meetLink; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    // Getters và Setters cho các trường mới
+    public String getConsultantQualification() { return consultantQualification; }
+    public void setConsultantQualification(String consultantQualification) { this.consultantQualification = consultantQualification; }
+    public Integer getConsultantExperienceYears() { return consultantExperienceYears; }
+    public void setConsultantExperienceYears(Integer consultantExperienceYears) { this.consultantExperienceYears = consultantExperienceYears; }
 }
