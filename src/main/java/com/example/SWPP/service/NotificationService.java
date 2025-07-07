@@ -38,7 +38,7 @@ public class NotificationService {
             List<Notification> notifications = allUsers.stream()
                     .map(user -> {
                         Notification notification = notificationMapper.toNotificationEntity(notificationDTO, user);
-                        notification.setType(Notification.NotificationType.SYSTEM); // Đảm bảo type là SYSTEM
+                        notification.setType(Notification.NotificationType.SYSTEM);
                         return notification;
                     })
                     .collect(Collectors.toList());
@@ -48,17 +48,22 @@ public class NotificationService {
                     .collect(Collectors.toList());
         } else {
             // Tạo thông báo cho một userId cụ thể
-            Long userId = notificationDTO.getUserId();
-            if (userId == null) {
-                throw new IllegalArgumentException("userId is required for non-system notification");
-            }
-            logger.info("Creating notification for userId={}", userId);
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại: " + userId));
-            Notification notification = notificationMapper.toNotificationEntity(notificationDTO, user);
-            Notification savedNotification = notificationRepository.save(notification);
-            return List.of(notificationMapper.toNotificationDTO(savedNotification));
+            return List.of(createSingleNotification(notificationDTO));
         }
+    }
+
+    @Transactional
+    public NotificationDTO createSingleNotification(NotificationDTO notificationDTO) {
+        logger.info("Creating single notification for userId={}", notificationDTO.getUserId());
+        Long userId = notificationDTO.getUserId();
+        if (userId == null) {
+            throw new IllegalArgumentException("userId là bắt buộc cho thông báo cá nhân");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại: " + userId));
+        Notification notification = notificationMapper.toNotificationEntity(notificationDTO, user);
+        Notification savedNotification = notificationRepository.save(notification);
+        return notificationMapper.toNotificationDTO(savedNotification);
     }
 
     public List<NotificationDTO> getUserNotifications(Long userId) {
