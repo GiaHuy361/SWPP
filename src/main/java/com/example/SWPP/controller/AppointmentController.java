@@ -70,13 +70,25 @@ public class AppointmentController {
             }
             List<AppointmentDTO> appointments;
             if (userId != null) {
+                // Người dùng bình thường xem lịch của chính họ
                 appointments = appointmentService.getAppointmentsByUserId(userId);
             } else {
-                if (!authentication.getAuthorities().contains(new SimpleGrantedAuthority("MANAGE_APPOINTMENTS"))) {
+                // Kiểm tra vai trò người dùng
+                boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"));
+                boolean isManager = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Manager"));
+                boolean isConsultant = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Consultant"));
+
+                if (isAdmin || isManager) {
+                    // Admin và Manager xem tất cả lịch hẹn
+                    appointments = appointmentService.getAllAppointments();
+                } else if (isConsultant) {
+                    // Consultant chỉ xem lịch hẹn của chính họ
+                    String consultantEmail = authentication.getName();
+                    appointments = appointmentService.getAppointmentsByConsultantEmail(consultantEmail);
+                } else {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body(Map.of("message", "Không có quyền MANAGE_APPOINTMENTS"));
+                            .body(Map.of("message", "Không có quyền xem danh sách lịch hẹn"));
                 }
-                appointments = appointmentService.getAllAppointments();
             }
             return ResponseEntity.ok(appointments);
         } catch (Exception e) {
@@ -100,9 +112,10 @@ public class AppointmentController {
             AppointmentDTO appointment = appointmentService.getAppointmentById(id)
                     .orElseThrow(() -> new RuntimeException("Lịch hẹn không tồn tại"));
             boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"));
+            boolean isManager = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Manager"));
             boolean isConsultant = appointment.getConsultantEmail().equals(currentUserEmail);
             boolean isUser = appointment.getUserEmail().equals(currentUserEmail);
-            if (!isAdmin && !isConsultant && !isUser) {
+            if (!isAdmin && !isManager && !isConsultant && !isUser) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Bạn không có quyền xem lịch hẹn này"));
             }

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -74,7 +75,7 @@ public class AppointmentService {
     // Read: Lấy tất cả lịch hẹn
     public List<AppointmentDTO> getAllAppointments() {
         logger.info("Fetching all appointments");
-        checkAuthority("MANAGE_APPOINTMENTS");
+        // Bỏ checkAuthority("MANAGE_APPOINTMENTS") vì quyền được xử lý trong controller
         return appointmentRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
@@ -97,6 +98,23 @@ public class AppointmentService {
         logger.info("Fetching appointments for userId: {}", userId);
         checkAuthority("BOOK_APPOINTMENTS");
         return appointmentRepository.findByUserId(userId).stream().map(this::mapToDTO).collect(Collectors.toList());
+    }
+
+    // Read: Lấy lịch hẹn theo email của consultant
+    public List<AppointmentDTO> getAppointmentsByConsultantEmail(String email) {
+        logger.info("Fetching appointments for consultant email: {}", email);
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            logger.warn("User with email {} not found", email);
+            return Collections.emptyList();
+        }
+        Consultant consultant = consultantRepository.findByUser(user).orElse(null);
+        if (consultant == null) {
+            logger.warn("Consultant not found for user with email {}", email);
+            return Collections.emptyList();
+        }
+        return appointmentRepository.findByConsultantId(consultant.getConsultantId())
+                .stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     // Update: Cập nhật lịch hẹn
@@ -148,6 +166,8 @@ public class AppointmentService {
         dto.setConsultantId(appointment.getConsultant().getConsultantId());
         dto.setConsultantFullName(appointment.getConsultant().getUser().getFullName());
         dto.setConsultantEmail(appointment.getConsultant().getUser().getEmail());
+        dto.setConsultantQualification(appointment.getConsultant().getQualification());
+        dto.setConsultantExperienceYears(appointment.getConsultant().getExperienceYears());
         dto.setAppointmentTime(appointment.getAppointmentTime());
         dto.setStatus(appointment.getStatus());
         dto.setMeetLink(appointment.getMeetLink());
@@ -156,7 +176,6 @@ public class AppointmentService {
     }
 
     private String generateGoogleMeetLink() {
-        // Giả lập link, thực tế dùng Google Calendar API
         return "https://meet.google.com/xyz-1234-abc";
     }
 
