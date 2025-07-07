@@ -55,12 +55,10 @@ const MyAppointments = () => {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      // Gọi API với userId của người dùng hiện tại
       const response = await apiClient.get(`/appointments?userId=${user.userId}`, {
         withCredentials: true
       });
       console.log('Fetched appointments:', response.data);
-      // Lọc lịch hẹn theo userId để đảm bảo chỉ hiển thị của người dùng hiện tại
       const userAppointments = Array.isArray(response.data)
         ? response.data.filter((appointment) => appointment.userId === user.userId)
         : [];
@@ -131,19 +129,11 @@ const MyAppointments = () => {
       case 'CANCELLED':
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Đã hủy</span>;
       case 'COMPLETED':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Hoàn thành</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Đã hoàn thành</span>;
       default:
         return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">{status}</span>;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -235,6 +225,12 @@ const MyAppointments = () => {
                       </div>
                       <div className="text-sm text-gray-500">
                         {appointment.consultantEmail || 'Không có email'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Trình độ: {appointment.consultantQualification || 'Chưa có thông tin'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Kinh nghiệm: {appointment.consultantExperienceYears ? `${appointment.consultantExperienceYears} năm` : 'Chưa có thông tin'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
