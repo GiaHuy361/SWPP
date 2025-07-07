@@ -46,6 +46,9 @@ public class CommunicationProgram {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "final_average_rating")
+    private Float finalAverageRating; // Điểm đánh giá trung bình cuối cùng khi chương trình kết thúc
+
     @OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Feedback> feedbacks = new HashSet<>();
 
@@ -87,4 +90,6 @@ public class CommunicationProgram {
     public void setFeedbacks(Set<Feedback> feedbacks) { this.feedbacks = feedbacks; }
     public Set<Long> getParticipants() { return participants; }
     public void setParticipants(Set<Long> participants) { this.participants = participants; }
+    public Float getFinalAverageRating() { return finalAverageRating; }
+    public void setFinalAverageRating(Float finalAverageRating) { this.finalAverageRating = finalAverageRating; }
 }

@@ -9,6 +9,7 @@ import com.example.SWPP.mapper.CommunicationProgramMapper;
 import com.example.SWPP.repository.CommunicationProgramRepository;
 import com.example.SWPP.repository.FeedbackRepository;
 import com.example.SWPP.repository.UserRepository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,6 +71,7 @@ public class CommunicationProgramService {
         program.setStartDate(dto.getStartDate());
         program.setEndDate(dto.getEndDate());
         program.setStatus(dto.getStatus());
+        program.setFinalAverageRating(dto.getFinalAverageRating());
         program.setUpdatedAt(currentTime);
         return programRepository.save(program);
     }
@@ -97,7 +99,7 @@ public class CommunicationProgramService {
         feedback.setCreatedAt(currentTime);
         Feedback savedFeedback = feedbackRepository.save(feedback);
         updateProgramStats(program.getProgramId());
-        incrementInteraction(program.getProgramId(), currentTime); // Chỉ tăng interaction, không gửi email
+        incrementInteraction(program.getProgramId(), currentTime);
         return savedFeedback;
     }
 
@@ -115,13 +117,17 @@ public class CommunicationProgramService {
                 .orElseThrow(() -> new RuntimeException("Phản hồi không tồn tại"));
         feedback.setRating(dto.getRating());
         feedback.setComment(dto.getComment());
-        return feedbackRepository.save(feedback);
+        Feedback savedFeedback = feedbackRepository.save(feedback);
+        updateProgramStats(feedback.getProgram().getProgramId());
+        return savedFeedback;
     }
 
     public void deleteFeedback(Long feedbackId) {
         Feedback feedback = feedbackRepository.findById(feedbackId)
                 .orElseThrow(() -> new RuntimeException("Phản hồi không tồn tại"));
+        Long programId = feedback.getProgram().getProgramId();
         feedbackRepository.delete(feedback);
+        updateProgramStats(programId);
     }
 
     private void updateProgramStats(Long programId) {
@@ -180,5 +186,17 @@ public class CommunicationProgramService {
         program.setInteractionCount(program.getInteractionCount() + 1);
         program.setUpdatedAt(currentTime);
         programRepository.save(program);
+    }
+
+    @Scheduled(cron = "0 0 * * * *") // Chạy mỗi giờ
+    public void updateProgramStatus() {
+        LocalDateTime currentTime = LocalDateTime.now();
+        List<CommunicationProgram> activePrograms = programRepository.findByStatusAndEndDateBefore("active", currentTime);
+        for (CommunicationProgram program : activePrograms) {
+            program.setStatus("inactive");
+            program.setFinalAverageRating(program.getAverageRating()); // Lưu điểm trung bình cuối cùng
+            program.setUpdatedAt(currentTime);
+            programRepository.save(program);
+        }
     }
 }

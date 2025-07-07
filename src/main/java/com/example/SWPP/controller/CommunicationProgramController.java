@@ -82,6 +82,7 @@ public class CommunicationProgramController {
                 programMap.put("createdAt", program.getCreatedAt());
                 programMap.put("updatedAt", program.getUpdatedAt());
                 programMap.put("activeProgramsCount", communicationProgramService.countActivePrograms(CURRENT_TIME));
+                programMap.put("finalAverageRating", program.getFinalAverageRating());
                 programList.add(programMap);
             }
             return ResponseEntity.ok(programList);
@@ -116,6 +117,7 @@ public class CommunicationProgramController {
             response.put("status", program.getStatus());
             response.put("createdAt", program.getCreatedAt());
             response.put("updatedAt", program.getUpdatedAt());
+            response.put("finalAverageRating", program.getFinalAverageRating());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Failed to fetch program for id={}: {}", programId, e.getMessage());
@@ -295,6 +297,34 @@ public class CommunicationProgramController {
             logger.error("Failed to join program with id={}: {}", programId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Tham gia chương trình thất bại: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{programId}/summary")
+    @PreAuthorize("hasAuthority('VIEW_PROGRAMS')")
+    public ResponseEntity<?> getProgramSummary(@PathVariable Long programId) {
+        logger.info("Fetching summary for program with id: {}", programId);
+        try {
+            CommunicationProgram program = communicationProgramService.getProgram(programId);
+            if (program == null) {
+                logger.warn("Program not found for id: {}", programId);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Chương trình không tồn tại"));
+            }
+            Map<String, Object> response = new HashMap<>();
+            response.put("programId", program.getProgramId());
+            response.put("title", program.getTitle());
+            response.put("participantCount", program.getParticipantCount());
+            response.put("interactionCount", program.getInteractionCount());
+            response.put("feedbackCount", program.getFeedbackCount());
+            response.put("averageRating", program.getAverageRating());
+            response.put("finalAverageRating", program.getFinalAverageRating());
+            response.put("status", program.getStatus());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Failed to fetch summary for program id={}: {}", programId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Lấy thông tin tổng quan thất bại: " + e.getMessage()));
         }
     }
 }

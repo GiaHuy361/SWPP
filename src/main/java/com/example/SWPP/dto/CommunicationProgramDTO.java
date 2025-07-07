@@ -29,6 +29,8 @@ public class CommunicationProgramDTO {
     @NotNull(message = "Status is required")
     private String status;
 
+    private Float finalAverageRating; // Thêm trường mới
+
     // Getters and Setters
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -48,4 +50,6 @@ public class CommunicationProgramDTO {
     public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public Float getFinalAverageRating() { return finalAverageRating; }
+    public void setFinalAverageRating(Float finalAverageRating) { this.finalAverageRating = finalAverageRating; }
 }

@@ -192,6 +192,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/communication/feedback/{feedbackId}").hasAuthority("MANAGE_PROGRAMS")
                         .requestMatchers(HttpMethod.DELETE, "/api/communication/feedback/{feedbackId}").hasAuthority("MANAGE_PROGRAMS")
                         .requestMatchers(HttpMethod.POST, "/api/communication/{programId}/join").hasAuthority("VIEW_PROGRAMS")
+                        .requestMatchers(HttpMethod.GET, "/api/communication/{programId}/summary").hasAuthority("VIEW_PROGRAMS")
                         // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )
