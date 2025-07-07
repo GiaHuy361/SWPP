@@ -4,12 +4,15 @@ import com.example.SWPP.dto.CommunicationProgramDTO;
 import com.example.SWPP.dto.FeedbackDTO;
 import com.example.SWPP.entity.CommunicationProgram;
 import com.example.SWPP.entity.Feedback;
+import com.example.SWPP.entity.User;
 import com.example.SWPP.service.CommunicationProgramService;
+import com.example.SWPP.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,9 +32,11 @@ public class CommunicationProgramController {
     private static final LocalDateTime CURRENT_TIME = LocalDateTime.of(2025, 7, 7, 14, 26); // 02:26 PM +07
 
     private final CommunicationProgramService communicationProgramService;
+    private final UserRepository userRepository;
 
-    public CommunicationProgramController(CommunicationProgramService communicationProgramService) {
+    public CommunicationProgramController(CommunicationProgramService communicationProgramService, UserRepository userRepository) {
         this.communicationProgramService = communicationProgramService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
@@ -172,7 +177,7 @@ public class CommunicationProgramController {
         }
         try {
             Feedback feedback = communicationProgramService.createFeedback(dto, CURRENT_TIME);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("feedbackId", feedback.getFeedbackId()));
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("feedbackId", feedback.getFeedbackId(), "message", "Phản hồi đã được gửi thành công."));
         } catch (Exception e) {
             logger.error("Failed to create feedback: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -268,6 +273,28 @@ public class CommunicationProgramController {
             logger.error("Failed to delete feedback with id={}: {}", feedbackId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Xóa phản hồi thất bại: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{programId}/join")
+    @PreAuthorize("hasAuthority('VIEW_PROGRAMS')")
+    public ResponseEntity<?> joinProgram(@PathVariable Long programId, Authentication authentication) {
+        logger.info("User attempting to join program with id: {}", programId);
+        try {
+            // Lấy email từ Authentication
+            String email = authentication.getName();
+            // Tìm userId từ email
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại với email: " + email));
+            Long userId = user.getUserId();
+
+            communicationProgramService.incrementParticipant(programId, userId, CURRENT_TIME);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(Map.of("message", "Tham gia chương trình thành công! Kiểm tra email để xem giấy mời."));
+        } catch (Exception e) {
+            logger.error("Failed to join program with id={}: {}", programId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Tham gia chương trình thất bại: " + e.getMessage()));
         }
     }
 }

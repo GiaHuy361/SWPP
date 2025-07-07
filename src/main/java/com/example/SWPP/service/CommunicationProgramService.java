@@ -23,13 +23,18 @@ public class CommunicationProgramService {
     private final FeedbackRepository feedbackRepository;
     private final UserRepository userRepository;
     private final CommunicationProgramMapper mapper;
+    private final EmailService emailService;
 
-    public CommunicationProgramService(CommunicationProgramRepository programRepository, FeedbackRepository feedbackRepository,
-                                       UserRepository userRepository, CommunicationProgramMapper mapper) {
+    public CommunicationProgramService(CommunicationProgramRepository programRepository,
+                                       FeedbackRepository feedbackRepository,
+                                       UserRepository userRepository,
+                                       CommunicationProgramMapper mapper,
+                                       EmailService emailService) {
         this.programRepository = programRepository;
         this.feedbackRepository = feedbackRepository;
         this.userRepository = userRepository;
         this.mapper = mapper;
+        this.emailService = emailService;
     }
 
     public CommunicationProgram createProgram(CommunicationProgramDTO dto, LocalDateTime currentTime) {
@@ -80,14 +85,19 @@ public class CommunicationProgramService {
                 .orElseThrow(() -> new RuntimeException("Chương trình không tồn tại"));
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+        // Kiểm tra xem người dùng đã tham gia chương trình chưa
+        if (!program.getParticipants().contains(dto.getUserId())) {
+            throw new RuntimeException("Người dùng chưa tham gia chương trình này");
+        }
+
         Feedback feedback = mapper.toFeedbackEntity(dto);
         feedback.setProgram(program);
         feedback.setUser(user);
         feedback.setCreatedAt(currentTime);
         Feedback savedFeedback = feedbackRepository.save(feedback);
         updateProgramStats(program.getProgramId());
-        incrementParticipant(program.getProgramId(), dto.getUserId(), currentTime);
-        incrementInteraction(program.getProgramId(), currentTime);
+        incrementInteraction(program.getProgramId(), currentTime); // Chỉ tăng interaction, không gửi email
         return savedFeedback;
     }
 
@@ -144,11 +154,23 @@ public class CommunicationProgramService {
     public void incrementParticipant(Long programId, Long userId, LocalDateTime currentTime) {
         CommunicationProgram program = programRepository.findById(programId)
                 .orElseThrow(() -> new RuntimeException("Chương trình không tồn tại"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
         if (!program.getParticipants().contains(userId)) {
             program.getParticipants().add(userId);
             program.setParticipantCount(program.getParticipantCount() + 1);
             program.setUpdatedAt(currentTime);
             programRepository.save(program);
+
+            // Gửi giấy mời qua email
+            String subject = "Thư Mời Tham Gia Chương Trình: " + program.getTitle();
+            String text = "Chào " + user.getUsername() + ",\n\n" +
+                    "Bạn đã được mời tham gia chương trình \"" + program.getTitle() + "\".\n" +
+                    "Mô tả: " + (program.getDescription() != null ? program.getDescription() : "Không có mô tả") + "\n" +
+                    "Thời gian bắt đầu: " + program.getStartDate() + "\n" +
+                    "Thời gian kết thúc: " + (program.getEndDate() != null ? program.getEndDate() : "Chưa xác định") + "\n\n" +
+                    "Trân trọng,\nĐội ngũ SWPP";
+            emailService.sendSimpleMessage(user.getEmail(), subject, text);
         }
     }
 
