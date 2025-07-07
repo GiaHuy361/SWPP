@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -40,29 +41,57 @@ public class NotificationController {
         return userRepository.findByEmail(email).orElse(null);
     }
 
+    // Endpoint để lấy userId từ email cho manager
+    @GetMapping("/user-id/{email}")
+    @PreAuthorize("hasAuthority('MANAGE_NOTIFICATIONS')")
+    public ResponseEntity<?> getUserIdByEmail(@PathVariable String email) {
+        logger.info("Tìm userId cho email: {}", email);
+        try {
+            Optional<User> userOptional = userRepository.findByEmail(email);
+            if (!userOptional.isPresent()) {
+                logger.warn("Không tìm thấy người dùng với email: {}", email);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Không tìm thấy người dùng"));
+            }
+            User user = userOptional.get();
+            return ResponseEntity.ok(Map.of("userId", user.getUserId()));
+        } catch (Exception e) {
+            logger.error("Lỗi khi tìm userId cho email {}: {}", email, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Lỗi hệ thống"));
+        }
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority('MANAGE_NOTIFICATIONS')")
     public ResponseEntity<?> createNotification(@Valid @RequestBody NotificationDTO notificationDTO, BindingResult bindingResult) {
-        logger.info("Creating notification");
+        logger.info("Tạo thông báo");
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getFieldError().getDefaultMessage();
-            logger.warn("Validation failed for notification creation: {}", errorMsg);
+            logger.warn("Lỗi xác thực khi tạo thông báo: {}", errorMsg);
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
             Boolean isSystemNotification = notificationDTO.getIsSystemNotification() != null ? notificationDTO.getIsSystemNotification() : false;
-            List<NotificationDTO> createdNotifications = notificationService.createNotification(notificationDTO, isSystemNotification);
+            List<NotificationDTO> createdNotifications;
+            if (!isSystemNotification && notificationDTO.getUserId() != null) {
+                // Gửi thông báo cho một người dùng cụ thể
+                createdNotifications = List.of(notificationService.createSingleNotification(notificationDTO));
+            } else {
+                // Gửi thông báo hệ thống hoặc theo logic hiện tại
+                createdNotifications = notificationService.createNotification(notificationDTO, isSystemNotification);
+            }
             if (isSystemNotification) {
                 return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Tạo thông báo hệ thống thành công", "notifications", createdNotifications));
             } else {
                 return ResponseEntity.status(HttpStatus.CREATED).body(createdNotifications.get(0));
             }
         } catch (IllegalArgumentException e) {
-            logger.error("Failed to create notification: {}", e.getMessage());
+            logger.error("Lỗi khi tạo thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Tạo thông báo thất bại: " + e.getMessage()));
         } catch (Exception e) {
-            logger.error("Failed to create notification: {}", e.getMessage());
+            logger.error("Lỗi khi tạo thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Tạo thông báo thất bại: " + e.getMessage()));
         }
@@ -71,10 +100,10 @@ public class NotificationController {
     @GetMapping
     @PreAuthorize("hasAuthority('VIEW_NOTIFICATIONS')")
     public ResponseEntity<?> getAllNotifications() {
-        logger.info("Fetching all notifications for user");
+        logger.info("Lấy tất cả thông báo của người dùng");
         User user = getCurrentUser();
         if (user == null) {
-            logger.warn("Unauthorized access attempt");
+            logger.warn("Truy cập không được xác thực");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Chưa xác thực người dùng"));
         }
@@ -82,7 +111,7 @@ public class NotificationController {
             List<NotificationDTO> notifications = notificationService.getUserNotifications(user.getUserId());
             return ResponseEntity.ok(notifications);
         } catch (Exception e) {
-            logger.error("Failed to fetch notifications: {}", e.getMessage());
+            logger.error("Lỗi khi lấy thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Lấy danh sách thông báo thất bại"));
         }
@@ -91,10 +120,10 @@ public class NotificationController {
     @GetMapping("/unread")
     @PreAuthorize("hasAuthority('VIEW_NOTIFICATIONS')")
     public ResponseEntity<?> getUnreadNotifications() {
-        logger.info("Fetching unread notifications for user");
+        logger.info("Lấy thông báo chưa đọc của người dùng");
         User user = getCurrentUser();
         if (user == null) {
-            logger.warn("Unauthorized access attempt");
+            logger.warn("Truy cập không được xác thực");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Chưa xác thực người dùng"));
         }
@@ -102,7 +131,7 @@ public class NotificationController {
             List<NotificationDTO> notifications = notificationService.getUnreadUserNotifications(user.getUserId());
             return ResponseEntity.ok(notifications);
         } catch (Exception e) {
-            logger.error("Failed to fetch unread notifications: {}", e.getMessage());
+            logger.error("Lỗi khi lấy thông báo chưa đọc: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Lấy danh sách thông báo chưa đọc thất bại"));
         }
@@ -111,10 +140,10 @@ public class NotificationController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('VIEW_NOTIFICATIONS')")
     public ResponseEntity<?> getNotificationById(@PathVariable Long id) {
-        logger.info("Fetching notification by id: {}", id);
+        logger.info("Lấy thông báo theo id: {}", id);
         User user = getCurrentUser();
         if (user == null) {
-            logger.warn("Unauthorized access attempt");
+            logger.warn("Truy cập không được xác thực");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Chưa xác thực người dùng"));
         }
@@ -125,11 +154,11 @@ public class NotificationController {
                     .orElseThrow(() -> new IllegalArgumentException("Thông báo không tồn tại hoặc không thuộc về người dùng"));
             return ResponseEntity.ok(notification);
         } catch (IllegalArgumentException e) {
-            logger.error("Failed to fetch notification: {}", e.getMessage());
+            logger.error("Lỗi khi lấy thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            logger.error("Failed to fetch notification: {}", e.getMessage());
+            logger.error("Lỗi khi lấy thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Lấy thông báo thất bại"));
         }
@@ -138,21 +167,21 @@ public class NotificationController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('MANAGE_NOTIFICATIONS')")
     public ResponseEntity<?> updateNotification(@PathVariable Long id, @Valid @RequestBody NotificationDTO notificationDTO, BindingResult bindingResult) {
-        logger.info("Updating notification with id: {}", id);
+        logger.info("Cập nhật thông báo với id: {}", id);
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getFieldError().getDefaultMessage();
-            logger.warn("Validation failed for notification update: {}", errorMsg);
+            logger.warn("Lỗi xác thực khi cập nhật thông báo: {}", errorMsg);
             return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
         }
         try {
             NotificationDTO updatedNotification = notificationService.updateNotification(id, notificationDTO);
             return ResponseEntity.ok(updatedNotification);
         } catch (IllegalArgumentException e) {
-            logger.error("Failed to update notification: {}", e.getMessage());
+            logger.error("Lỗi khi cập nhật thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            logger.error("Failed to update notification: {}", e.getMessage());
+            logger.error("Lỗi khi cập nhật thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Cập nhật thông báo thất bại"));
         }
@@ -161,10 +190,10 @@ public class NotificationController {
     @PutMapping("/{id}/read")
     @PreAuthorize("hasAuthority('VIEW_NOTIFICATIONS')")
     public ResponseEntity<?> markNotificationAsRead(@PathVariable Long id) {
-        logger.info("Marking notification as read: id={}", id);
+        logger.info("Đánh dấu thông báo đã đọc: id={}", id);
         User user = getCurrentUser();
         if (user == null) {
-            logger.warn("Unauthorized access attempt");
+            logger.warn("Truy cập không được xác thực");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Chưa xác thực người dùng"));
         }
@@ -176,11 +205,11 @@ public class NotificationController {
             notificationService.markAsRead(id);
             return ResponseEntity.ok(Map.of("message", "Đánh dấu thông báo đã đọc thành công"));
         } catch (IllegalArgumentException e) {
-            logger.error("Failed to mark notification as read: {}", e.getMessage());
+            logger.error("Lỗi khi đánh dấu thông báo đã đọc: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            logger.error("Failed to mark notification as read: {}", e.getMessage());
+            logger.error("Lỗi khi đánh dấu thông báo đã đọc: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Đánh dấu thông báo đã đọc thất bại"));
         }
@@ -189,16 +218,16 @@ public class NotificationController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('MANAGE_NOTIFICATIONS')")
     public ResponseEntity<?> deleteNotification(@PathVariable Long id) {
-        logger.info("Deleting notification with id: {}", id);
+        logger.info("Xóa thông báo với id: {}", id);
         try {
             notificationService.deleteNotification(id);
             return ResponseEntity.ok(Map.of("message", "Xóa thông báo thành công"));
         } catch (IllegalArgumentException e) {
-            logger.error("Failed to delete notification: {}", e.getMessage());
+            logger.error("Lỗi khi xóa thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            logger.error("Failed to delete notification: {}", e.getMessage());
+            logger.error("Lỗi khi xóa thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Xóa thông báo thất bại"));
         }
