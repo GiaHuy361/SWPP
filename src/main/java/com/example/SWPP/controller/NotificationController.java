@@ -44,7 +44,7 @@ public class NotificationController {
 
     // Endpoint để lấy userId từ email
     @GetMapping("/user-id/{email}")
-    @PreAuthorize("hasAuthority('SEND_NOTIFICATION')") // Thay đổi từ MANAGE_NOTIFICATIONS để Staff, Consultant cũng dùng được
+    @PreAuthorize("hasAuthority('SEND_NOTIFICATION')")
     public ResponseEntity<?> getUserIdByEmail(@PathVariable String email) {
         logger.info("Tìm userId cho email: {}", email);
         try {
@@ -124,8 +124,9 @@ public class NotificationController {
 
     @PostMapping("/send")
     @PreAuthorize("hasAuthority('SEND_NOTIFICATION')")
-    public ResponseEntity<?> sendNotification(@Valid @RequestBody NotificationDTO notificationDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> sendNotification(@RequestBody NotificationDTO notificationDTO, BindingResult bindingResult) {
         logger.info("Gửi thông báo với quyền SEND_NOTIFICATION");
+        // Bỏ @Valid để cho phép userId: null cho thông báo hệ thống
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getFieldError().getDefaultMessage();
             logger.warn("Lỗi xác thực khi gửi thông báo: {}", errorMsg);
@@ -136,8 +137,10 @@ public class NotificationController {
             List<NotificationDTO> createdNotifications;
             if (!isSystemNotification && notificationDTO.getUserId() != null) {
                 createdNotifications = List.of(notificationService.createSingleNotification(notificationDTO));
+            } else if (isSystemNotification) {
+                createdNotifications = notificationService.createNotification(notificationDTO, true);
             } else {
-                createdNotifications = notificationService.createNotification(notificationDTO, isSystemNotification);
+                throw new IllegalArgumentException("Thông báo cá nhân yêu cầu userId hoặc thông báo hệ thống phải được chỉ định");
             }
             if (isSystemNotification) {
                 return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Gửi thông báo hệ thống thành công", "notifications", createdNotifications));

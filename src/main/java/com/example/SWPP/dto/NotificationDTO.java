@@ -2,7 +2,6 @@ package com.example.SWPP.dto;
 
 import com.example.SWPP.entity.Notification;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +9,7 @@ public class NotificationDTO {
 
     private Long notificationId;
 
-    @NotNull(message = "ID người dùng không được để trống")
+    // Bỏ @NotNull để cho phép userId: null cho thông báo hệ thống
     private Long userId;
 
     @NotBlank(message = "Tiêu đề không được để trống")
@@ -19,7 +18,7 @@ public class NotificationDTO {
     @NotBlank(message = "Nội dung không được để trống")
     private String message;
 
-    @NotNull(message = "Loại thông báo không được để trống")
+    @NotBlank(message = "Loại thông báo không được để trống")
     private Notification.NotificationType type;
 
     private Boolean isRead;

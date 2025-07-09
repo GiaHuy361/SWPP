@@ -32,13 +32,14 @@ public class NotificationService {
     public List<NotificationDTO> createNotification(NotificationDTO notificationDTO, Boolean isSystemNotification) {
         logger.info("Creating notification, isSystemNotification={}", isSystemNotification);
         if (isSystemNotification != null && isSystemNotification) {
-            // Tạo thông báo cho tất cả người dùng
+            // Tạo thông báo hệ thống cho tất cả người dùng
             logger.info("Creating system notification for all users");
             List<User> allUsers = userRepository.findAll();
             List<Notification> notifications = allUsers.stream()
                     .map(user -> {
                         Notification notification = notificationMapper.toNotificationEntity(notificationDTO, user);
                         notification.setType(Notification.NotificationType.SYSTEM);
+                        notification.setIsRead(false);
                         return notification;
                     })
                     .collect(Collectors.toList());
