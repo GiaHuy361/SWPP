@@ -173,14 +173,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/enrollments/courses/*").hasAuthority("ENROLL_COURSES")
                         .requestMatchers(HttpMethod.GET, "/api/enrollments/user").hasAuthority("VIEW_COURSES")
                         // API thông báo (Notifications)
-                        .requestMatchers(HttpMethod.GET, "/api/notifications/user-id/{email}").hasAuthority("MANAGE_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.GET, "/api/notifications/user-id/{email}").hasAuthority("SEND_NOTIFICATION") // Đổi từ MANAGE_NOTIFICATIONS sang SEND_NOTIFICATION
                         .requestMatchers(HttpMethod.POST, "/api/notifications").hasAuthority("MANAGE_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.POST, "/api/notifications/send").hasAuthority("SEND_NOTIFICATION")
                         .requestMatchers(HttpMethod.GET, "/api/notifications").hasAuthority("VIEW_NOTIFICATIONS")
                         .requestMatchers(HttpMethod.GET, "/api/notifications/unread").hasAuthority("VIEW_NOTIFICATIONS")
                         .requestMatchers(HttpMethod.GET, "/api/notifications/{id}").hasAuthority("VIEW_NOTIFICATIONS")
                         .requestMatchers(HttpMethod.PUT, "/api/notifications/{id}").hasAuthority("MANAGE_NOTIFICATIONS")
                         .requestMatchers(HttpMethod.PUT, "/api/notifications/{id}/read").hasAuthority("VIEW_NOTIFICATIONS")
                         .requestMatchers(HttpMethod.DELETE, "/api/notifications/{id}").hasAuthority("MANAGE_NOTIFICATIONS")
+                        .requestMatchers(HttpMethod.GET, "/api/notifications/users").hasAuthority("SEND_NOTIFICATION") // Thêm dòng này cho endpoint lấy danh sách người dùng
                         // API truyền thông (Communication)
                         .requestMatchers(HttpMethod.POST, "/api/communication").hasAuthority("MANAGE_PROGRAMS")
                         .requestMatchers(HttpMethod.GET, "/api/communication").hasAuthority("VIEW_PROGRAMS")
@@ -194,7 +196,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/communication/feedback/{feedbackId}").hasAuthority("MANAGE_PROGRAMS")
                         .requestMatchers(HttpMethod.POST, "/api/communication/{programId}/join").hasAuthority("VIEW_PROGRAMS")
                         .requestMatchers(HttpMethod.GET, "/api/communication/{programId}/summary").hasAuthority("VIEW_PROGRAMS")
-                       //api blog
+                        //api blog
                         .requestMatchers(HttpMethod.GET,    "/api/blogposts/**").permitAll()
                         .requestMatchers(HttpMethod.POST,   "/api/blogposts").hasAuthority("MANAGE_BLOGS")
                         .requestMatchers(HttpMethod.PUT,    "/api/blogposts/**").hasAuthority("MANAGE_BLOGS")
@@ -203,9 +205,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/blogposts/*/comments").hasAuthority("CREATE_COMMENTS")
                         .requestMatchers(HttpMethod.GET,  "/api/blogposts/*/comments").permitAll()
                         //api Bookmark
-                        // ✅ Phân quyền Bookmark chuẩn
                         .requestMatchers(HttpMethod.GET, "/api/bookmarks/check/**").hasAuthority("VIEW_BLOGS")
-                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS") // Nếu có API GET khác
+                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
                         .requestMatchers(HttpMethod.POST, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
                         .requestMatchers(HttpMethod.PUT, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
                         .requestMatchers(HttpMethod.DELETE, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
@@ -214,7 +215,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,   "/api/reactions").hasAuthority("REACT_POSTS")
                         .requestMatchers(HttpMethod.PUT,    "/api/reactions/**").hasAuthority("REACT_POSTS")
                         .requestMatchers(HttpMethod.DELETE, "/api/reactions/**").hasAuthority("REACT_POSTS")
-
                         // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )

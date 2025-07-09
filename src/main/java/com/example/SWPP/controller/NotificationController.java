@@ -19,6 +19,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -41,9 +42,9 @@ public class NotificationController {
         return userRepository.findByEmail(email).orElse(null);
     }
 
-    // Endpoint để lấy userId từ email cho manager
+    // Endpoint để lấy userId từ email
     @GetMapping("/user-id/{email}")
-    @PreAuthorize("hasAuthority('MANAGE_NOTIFICATIONS')")
+    @PreAuthorize("hasAuthority('SEND_NOTIFICATION')") // Thay đổi từ MANAGE_NOTIFICATIONS để Staff, Consultant cũng dùng được
     public ResponseEntity<?> getUserIdByEmail(@PathVariable String email) {
         logger.info("Tìm userId cho email: {}", email);
         try {
@@ -62,6 +63,32 @@ public class NotificationController {
         }
     }
 
+    // Endpoint mới để lấy danh sách người dùng
+    @GetMapping("/users")
+    @PreAuthorize("hasAuthority('SEND_NOTIFICATION')")
+    public ResponseEntity<?> getAllUsers() {
+        logger.info("Lấy danh sách tất cả người dùng");
+        try {
+            List<User> users = userRepository.findAll();
+            logger.info("Found {} users", users.size());
+            List<Map<String, Object>> userList = users.stream().map(user -> {
+                Map<String, Object> userMap = new java.util.HashMap<>();
+                userMap.put("userId", user.getUserId());
+                userMap.put("email", user.getEmail() != null ? user.getEmail() : "");
+                userMap.put("username", user.getUsername() != null ? user.getUsername() : "");
+                userMap.put("fullName", user.getFullName() != null ? user.getFullName() : "");
+                userMap.put("phone", user.getPhone() != null ? user.getPhone() : "");
+                userMap.put("role", user.getRole() != null ? user.getRole().getRoleName() : "Guest");
+                return userMap;
+            }).collect(Collectors.toList());
+            return ResponseEntity.ok(userList);
+        } catch (Exception e) {
+            logger.error("Lỗi khi lấy danh sách người dùng: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Lấy danh sách người dùng thất bại"));
+        }
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority('MANAGE_NOTIFICATIONS')")
     public ResponseEntity<?> createNotification(@Valid @RequestBody NotificationDTO notificationDTO, BindingResult bindingResult) {
@@ -75,10 +102,8 @@ public class NotificationController {
             Boolean isSystemNotification = notificationDTO.getIsSystemNotification() != null ? notificationDTO.getIsSystemNotification() : false;
             List<NotificationDTO> createdNotifications;
             if (!isSystemNotification && notificationDTO.getUserId() != null) {
-                // Gửi thông báo cho một người dùng cụ thể
                 createdNotifications = List.of(notificationService.createSingleNotification(notificationDTO));
             } else {
-                // Gửi thông báo hệ thống hoặc theo logic hiện tại
                 createdNotifications = notificationService.createNotification(notificationDTO, isSystemNotification);
             }
             if (isSystemNotification) {
@@ -94,6 +119,39 @@ public class NotificationController {
             logger.error("Lỗi khi tạo thông báo: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Tạo thông báo thất bại: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/send")
+    @PreAuthorize("hasAuthority('SEND_NOTIFICATION')")
+    public ResponseEntity<?> sendNotification(@Valid @RequestBody NotificationDTO notificationDTO, BindingResult bindingResult) {
+        logger.info("Gửi thông báo với quyền SEND_NOTIFICATION");
+        if (bindingResult.hasErrors()) {
+            String errorMsg = bindingResult.getFieldError().getDefaultMessage();
+            logger.warn("Lỗi xác thực khi gửi thông báo: {}", errorMsg);
+            return ResponseEntity.badRequest().body(Map.of("message", errorMsg));
+        }
+        try {
+            Boolean isSystemNotification = notificationDTO.getIsSystemNotification() != null ? notificationDTO.getIsSystemNotification() : false;
+            List<NotificationDTO> createdNotifications;
+            if (!isSystemNotification && notificationDTO.getUserId() != null) {
+                createdNotifications = List.of(notificationService.createSingleNotification(notificationDTO));
+            } else {
+                createdNotifications = notificationService.createNotification(notificationDTO, isSystemNotification);
+            }
+            if (isSystemNotification) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Gửi thông báo hệ thống thành công", "notifications", createdNotifications));
+            } else {
+                return ResponseEntity.status(HttpStatus.CREATED).body(createdNotifications.get(0));
+            }
+        } catch (IllegalArgumentException e) {
+            logger.error("Lỗi khi gửi thông báo: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Gửi thông báo thất bại: " + e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Lỗi khi gửi thông báo: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Gửi thông báo thất bại: " + e.getMessage()));
         }
     }
 
