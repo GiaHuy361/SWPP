@@ -24,7 +24,7 @@ export const completeLesson = (lessonId) => axios.post(`/lessons/${lessonId}/com
 
 // Quiz APIs
 export const getQuizByLessonId = (lessonId) => axios.get(`/lessons/${lessonId}/quiz`);
-export const submitQuiz = (lessonId, answers) => axios.post(`/lessons/${lessonId}/quiz/submit`, answers);
+export const submitQuiz = (quizId, submission) => axios.post(`/quizzes/${quizId}/submissions`, submission);
 export const createQuizForCourse = (courseId, quizData) => axios.post(`/courses/${courseId}/quizzes`, quizData);
 
 // Quiz Question APIs

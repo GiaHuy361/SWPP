@@ -13,6 +13,7 @@ import {
   updateQuestionAnswer,
   deleteQuestionAnswer
 } from '../../services/courseService';
+import '../../TailwindCSS/QuizManagement.css';
 
 export default function QuizManagement() {
   const { courseId } = useParams();
@@ -336,11 +337,11 @@ export default function QuizManagement() {
 
   // Phần UI
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
+    <div className="quiz-container">
       {/* Nút quay lại trang trước */}
       <button
         onClick={handleGoBack}
-        className="mb-4 text-blue-600 hover:text-blue-800 flex items-center font-semibold transition-colors"
+        className="quiz-btn-secondary mb-4 flex items-center font-semibold transition-colors"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -348,8 +349,8 @@ export default function QuizManagement() {
         Quay lại
       </button>
 
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-2xl font-bold mb-6 text-blue-800 border-b pb-3 flex items-center">
+      <div className="quiz-card">
+        <h1 className="quiz-title flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
