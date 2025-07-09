@@ -27,7 +27,7 @@ const notificationService = {
                 let notifications = notificationsResponse.data;
                 
                 // Lấy danh sách tất cả người dùng
-                const usersResponse = await axios.get('/auth/users');
+                const usersResponse = await axios.get('/notifications/users'); // Đổi sang endpoint mới
                 const users = usersResponse.data || [];
                 
                 // Thêm thông tin người nhận vào mỗi thông báo
@@ -85,7 +85,7 @@ const notificationService = {
                     if (allResponse.data && Array.isArray(allResponse.data)) {
                         console.log("Success with /notifications/all", allResponse.data);
                         // Thêm thông tin người nhận
-                        const usersResponse = await axios.get('/auth/users');
+                        const usersResponse = await axios.get('/notifications/users'); // Đổi sang endpoint mới
                         const users = usersResponse.data || [];
                         
                         return allResponse.data.map(notification => {
@@ -186,6 +186,17 @@ const notificationService = {
         }
     },
 
+    // Tạo thông báo mới với endpoint send (yêu cầu quyền SEND_NOTIFICATION)
+    createNotificationWithSendEndpoint: async (notificationData) => {
+        try {
+            const response = await axios.post('/notifications/send', notificationData);
+            return response.data;
+        } catch (error) {
+            console.error('Error creating notification with send endpoint:', error);
+            throw error;
+        }
+    },
+
     // Cập nhật thông báo (yêu cầu quyền MANAGE_NOTIFICATIONS)
     updateNotification: async (id, notificationData) => {
         try {
@@ -208,7 +219,7 @@ const notificationService = {
         }
     },
 
-    // Lấy userId từ email (yêu cầu quyền MANAGE_NOTIFICATIONS)
+    // Lấy userId từ email (yêu cầu quyền SEND_NOTIFICATION)
     getUserIdByEmail: async (email) => {
         try {
             const response = await axios.get(`/notifications/user-id/${email}`);
@@ -219,10 +230,10 @@ const notificationService = {
         }
     },
 
-    // Lấy tất cả người dùng để gửi thông báo (yêu cầu quyền MANAGE_NOTIFICATIONS)
+    // Lấy tất cả người dùng để gửi thông báo (yêu cầu quyền SEND_NOTIFICATION)
     getAllUsers: async () => {
         try {
-            const response = await axios.get('/auth/users');
+            const response = await axios.get('/notifications/users'); // Đổi sang endpoint mới
             return response.data;
         } catch (error) {
             console.error('Error fetching all users:', error);

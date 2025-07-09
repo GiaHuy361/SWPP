@@ -38,7 +38,7 @@ function Header() {
   const canManageRoles = user && user.permissions?.includes('MANAGE_ROLES');
   const canManageUsers = user && user.permissions?.includes('MANAGE_USERS');
   const canManageSurveys = user && user.permissions?.includes('MANAGE_SURVEYS');
-  const canManageNotifications = user && user.permissions?.includes('MANAGE_NOTIFICATIONS');
+  const canManageNotifications = user && (user.permissions?.includes('MANAGE_NOTIFICATIONS') || user.permissions?.includes('SEND_NOTIFICATION')); // Thêm SEND_NOTIFICATION
 
   return (
     <header
@@ -91,12 +91,10 @@ function Header() {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
-          
             {isAuthenticated && (
               <NotificationDropdown />
             )}
-          
-            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys) && (
+            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications) && (
               <div className="relative group">
                 <button className="flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 rounded-full p-2.5 w-10 h-10">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,7 +138,7 @@ function Header() {
                         Quản lý khóa học
                       </Link>
                       {canManageNotifications && (
-                        <Link to="/notification-management" className="block w-full text-left px-4 py-3 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center">
+                        <Link to="/notifications/manage" className="block w-full text-left px-4 py-3 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center">
                           <svg className="h-5 w-5 mr-2 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                           </svg>
@@ -294,7 +292,7 @@ function Header() {
             >
               Liên hệ
             </Link>
-            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys) && (
+            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications) && (
               <>
                 <div className="py-2.5 text-gray-700 text-lg font-medium">
                   Quản lý tài khoản:
@@ -347,7 +345,7 @@ function Header() {
                     </Link>
                     {canManageNotifications && (
                       <Link
-                        to="/notification-management"
+                        to="/notifications/manage"
                         className="block py-2.5 pl-4 text-blue-700 font-medium text-lg flex items-center bg-blue-50 rounded-lg mx-2"
                         onClick={() => setMobileMenuOpen(false)}
                       >

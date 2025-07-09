@@ -8,7 +8,7 @@ const NotificationManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedType, setSelectedType] = useState('');
-    const [selectedStatus, setSelectedStatus] = useState(''); 
+    const [selectedStatus, setSelectedStatus] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
@@ -29,14 +29,14 @@ const NotificationManagement = () => {
 
     // Kiểm tra quyền
     useEffect(() => {
-        // Đảm bảo người dùng đã đăng nhập và có quyền MANAGE_NOTIFICATIONS
-        if (!user || !permissions.includes('MANAGE_NOTIFICATIONS')) {
+        // Đảm bảo người dùng đã đăng nhập và có quyền SEND_NOTIFICATION hoặc MANAGE_NOTIFICATIONS
+        if (!user || (!permissions.includes('SEND_NOTIFICATION') && !permissions.includes('MANAGE_NOTIFICATIONS'))) {
             navigate('/access-denied');
             return;
         }
         
         fetchAllNotifications();
-        console.log("User role:", user.role); // Log vai trò người dùng để debug
+        console.log("User role:", user.role);
     }, [permissions, navigate, user]);
 
     const fetchAllNotifications = async () => {
@@ -44,7 +44,6 @@ const NotificationManagement = () => {
             setLoading(true);
             console.log('Fetching notifications, user role:', user?.role);
             
-            // Sử dụng phương thức mới để đảm bảo lấy được dữ liệu
             const data = await notificationService.getNotificationsByAnyMeans();
             
             console.log('Fetched notification data:', data);
@@ -86,7 +85,6 @@ const NotificationManagement = () => {
         }
     };
 
-    // Tải danh sách người dùng khi mở modal
     useEffect(() => {
         if (showCreateModal) {
             fetchAllUsers();
@@ -94,6 +92,10 @@ const NotificationManagement = () => {
     }, [showCreateModal]);
 
     const handleDeleteNotification = async (id) => {
+        if (!permissions.includes('MANAGE_NOTIFICATIONS')) {
+            setError('Bạn không có quyền xóa thông báo.');
+            return;
+        }
         if (window.confirm('Bạn có chắc chắn muốn xóa thông báo này?')) {
             try {
                 await notificationService.deleteNotification(id);
@@ -114,7 +116,6 @@ const NotificationManagement = () => {
             [name]: value
         });
 
-        // Clear form errors when user types
         if (formErrors[name]) {
             setFormErrors({
                 ...formErrors,
@@ -143,7 +144,6 @@ const NotificationManagement = () => {
             email: selectedUser ? selectedUser.email : ''
         });
         
-        // Clear form errors when user selects
         if (formErrors.email) {
             setFormErrors({
                 ...formErrors,
@@ -201,7 +201,6 @@ const NotificationManagement = () => {
         try {
             let userId = formData.userId;
             
-            // Nếu không phải thông báo hệ thống, lấy userId từ email (nếu chưa chọn từ dropdown)
             if (!formData.isSystemNotification && !userId && formData.email) {
                 userId = await getUserIdFromEmail();
                 if (!userId) {
@@ -210,7 +209,6 @@ const NotificationManagement = () => {
                 }
             }
             
-            // Lấy thêm thông tin người nhận từ danh sách người dùng nếu có
             let recipientName = '';
             let recipientEmail = formData.email;
             
@@ -232,9 +230,9 @@ const NotificationManagement = () => {
                 recipientEmail: recipientEmail
             };
             
-            await notificationService.createNotification(notificationData);
+            // Sử dụng endpoint /api/notifications/send
+            await notificationService.createNotificationWithSendEndpoint(notificationData);
             
-            // Đóng modal và reset form
             setShowCreateModal(false);
             setFormData({
                 title: '',
@@ -245,27 +243,53 @@ const NotificationManagement = () => {
                 email: ''
             });
             
-            // Hiển thị thông báo thành công
-            setSuccessMessage('Tạo thông báo thành công');
+            setSuccessMessage('Gửi thông báo thành công');
             setTimeout(() => setSuccessMessage(''), 3000);
             
-            // Tải lại danh sách thông báo
             fetchAllNotifications();
         } catch (error) {
             console.error('Error creating notification:', error);
-            setError('Không thể tạo thông báo. Vui lòng thử lại sau.');
+            setError('Không thể gửi thông báo. Vui lòng thử lại sau.');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // Hàm để định dạng thời gian hiển thị thông báo
+    const handleToggleReadStatus = async (notification) => {
+        if (!permissions.includes('MANAGE_NOTIFICATIONS')) {
+            setError('Bạn không có quyền thay đổi trạng thái thông báo.');
+            return;
+        }
+        try {
+            if (notification.isRead) {
+                await notificationService.markAsUnread(notification.notificationId);
+                setNotifications(notifications.map(n => 
+                    n.notificationId === notification.notificationId 
+                        ? { ...n, isRead: false } 
+                        : n
+                ));
+                setSuccessMessage('Đã đánh dấu thông báo chưa đọc');
+            } else {
+                await notificationService.markAsRead(notification.notificationId);
+                setNotifications(notifications.map(n => 
+                    n.notificationId === notification.notificationId 
+                        ? { ...n, isRead: true } 
+                        : n
+                ));
+                setSuccessMessage('Đã đánh dấu thông báo đã đọc');
+            }
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (error) {
+            console.error('Error toggling read status:', error);
+            setError('Không thể thay đổi trạng thái thông báo. Vui lòng thử lại sau.');
+        }
+    };
+
     const formatDateTime = (dateTime) => {
         const date = new Date(dateTime);
         return date.toLocaleString('vi-VN');
     };
 
-    // Danh sách loại thông báo
     const notificationTypes = [
         { value: '', label: 'Tất cả' },
         { value: 'SYSTEM', label: 'Hệ thống' },
@@ -275,19 +299,14 @@ const NotificationManagement = () => {
         { value: 'SURVEY', label: 'Khảo sát' }
     ];
 
-    // Lọc thông báo theo loại và trạng thái
     const filteredNotifications = notifications.filter(notification => {
-        // Lọc theo loại
         const typeMatches = !selectedType || notification.type === selectedType;
-        
-        // Lọc theo trạng thái đọc
         let statusMatches = true;
         if (selectedStatus === 'read') {
             statusMatches = notification.isRead === true;
         } else if (selectedStatus === 'unread') {
             statusMatches = notification.isRead === false;
         }
-        
         return typeMatches && statusMatches;
     });
 
@@ -313,42 +332,6 @@ const NotificationManagement = () => {
         }
     };
 
-    // Hàm để đánh dấu thông báo đã đọc/chưa đọc
-    const handleToggleReadStatus = async (notification) => {
-        try {
-            if (notification.isRead) {
-                // Đánh dấu là chưa đọc
-                await notificationService.markAsUnread(notification.notificationId);
-                
-                // Cập nhật UI
-                setNotifications(notifications.map(n => 
-                    n.notificationId === notification.notificationId 
-                        ? { ...n, isRead: false } 
-                        : n
-                ));
-                
-                setSuccessMessage('Đã đánh dấu thông báo chưa đọc');
-            } else {
-                // Đánh dấu là đã đọc
-                await notificationService.markAsRead(notification.notificationId);
-                
-                // Cập nhật UI
-                setNotifications(notifications.map(n => 
-                    n.notificationId === notification.notificationId 
-                        ? { ...n, isRead: true } 
-                        : n
-                ));
-                
-                setSuccessMessage('Đã đánh dấu thông báo đã đọc');
-            }
-            
-            setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (error) {
-            console.error('Error toggling read status:', error);
-            setError('Không thể thay đổi trạng thái thông báo. Vui lòng thử lại sau.');
-        }
-    };
-
     if (loading) {
         return (
             <div className="container mx-auto p-6">
@@ -367,7 +350,7 @@ const NotificationManagement = () => {
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-2xl font-bold text-blue-800 mb-2">Quản lý Thông báo</h1>
-                        <p className="text-blue-600">Tạo và quản lý thông báo hệ thống hoặc thông báo cá nhân</p>
+                        <p className="text-blue-600">Gửi và quản lý thông báo hệ thống hoặc cá nhân</p>
                         {user?.role === 'Manager' && (
                             <div className="mt-2 text-sm">
                                 <span className="mr-4">
@@ -381,15 +364,17 @@ const NotificationManagement = () => {
                             </div>
                         )}
                     </div>
-                    <button 
-                        onClick={() => setShowCreateModal(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                        Tạo thông báo mới
-                    </button>
+                    {permissions.includes('SEND_NOTIFICATION') && (
+                        <button 
+                            onClick={() => setShowCreateModal(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                            </svg>
+                            Gửi thông báo mới
+                        </button>
+                    )}
                 </div>
             </div>
             
@@ -484,9 +469,11 @@ const NotificationManagement = () => {
                                             </th>
                                         </>
                                     )}
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Hành động
-                                    </th>
+                                    {permissions.includes('MANAGE_NOTIFICATIONS') && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Hành động
+                                        </th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -524,25 +511,25 @@ const NotificationManagement = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <button
                                                         onClick={() => handleToggleReadStatus(notification)}
-                                                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer ${
-                                                            notification.isRead 
+                                                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer ${notification.isRead 
                                                             ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                                        }`}
+                                                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'}`}
                                                     >
                                                         {notification.isRead ? 'Đã đọc' : 'Chưa đọc'}
                                                     </button>
                                                 </td>
                                             </>
                                         )}
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <button 
-                                                onClick={() => handleDeleteNotification(notification.notificationId)}
-                                                className="text-red-600 hover:text-red-900"
-                                            >
-                                                Xóa
-                                            </button>
-                                        </td>
+                                        {permissions.includes('MANAGE_NOTIFICATIONS') && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <button 
+                                                    onClick={() => handleDeleteNotification(notification.notificationId)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                >
+                                                    Xóa
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -551,12 +538,11 @@ const NotificationManagement = () => {
                 )}
             </div>
 
-            {/* Modal tạo thông báo */}
             {showCreateModal && (
                 <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
                     <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Tạo thông báo mới</h2>
+                            <h2 className="text-xl font-bold">Gửi thông báo mới</h2>
                             <button 
                                 onClick={() => setShowCreateModal(false)}
                                 className="text-gray-500 hover:text-gray-700"

@@ -87,7 +87,7 @@ function App() {
               <Route path="/edit-user/:id" element={<PrivateRoute requiredPermission="MANAGE_USERS"><EditUserPage /></PrivateRoute>} />
               <Route path="/role-permissions" element={<PrivateRoute requiredPermission="MANAGE_ROLES"><RolePermissionPage /></PrivateRoute>} />
               <Route path="/notifications" element={<PrivateRoute requiredPermission="VIEW_NOTIFICATIONS"><NotificationsPage /></PrivateRoute>} />
-              <Route path="/notification-management" element={<PrivateRoute requiredPermission="MANAGE_NOTIFICATIONS"><NotificationManagement /></PrivateRoute>} />
+              <Route path="/notifications/manage" element={<PrivateRoute requiredPermission={['SEND_NOTIFICATION', 'MANAGE_NOTIFICATIONS']}><NotificationManagement /></PrivateRoute>} /> {/* Sửa quyền */}
               <Route path="/courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CourseListPage /></PrivateRoute>} />
               <Route path="/courses/:courseId/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCoursePage /></PrivateRoute>} /> {/* Giữ nguyên */}
               <Route path="/courses/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCourseListPage /></PrivateRoute>} />
@@ -111,10 +111,8 @@ function App() {
               <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/create" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><LessonCreateForm /></PrivateRoute>} />
               <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/:lessonId/edit" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><LessonEditForm /></PrivateRoute>} />
               
-
               <Route path="/admin/courses/:courseId/students" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><StudentManagement /></PrivateRoute>} />
               <Route path="/admin/courses/:courseId/certificates" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><CertificateManagement /></PrivateRoute>} />
-              
               
               {/* Thêm route quản lý khảo sát */}
               <Route path="/surveys/manage" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyManagement /></PrivateRoute>} />
@@ -123,9 +121,6 @@ function App() {
               <Route path="/surveys/manage/questions" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyQuestionManagement /></PrivateRoute>} />
               <Route path="/surveys/manage/options" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyOptionManagement /></PrivateRoute>} />
               <Route path="/notifications" element={<PrivateRoute requiredPermission="VIEW_NOTIFICATIONS"><NotificationsPage /></PrivateRoute>} />
-              <Route path="/notifications/manage" element={<PrivateRoute requiredPermission="MANAGE_NOTIFICATIONS"><NotificationManagement /></PrivateRoute>} />
-
-
               <Route path="/access-denied" element={<AccessDenied />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="*" element={<NotFoundPage />} /> {/* Fallback */}
@@ -139,4 +134,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
