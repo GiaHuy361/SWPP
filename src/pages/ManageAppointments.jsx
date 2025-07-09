@@ -30,9 +30,8 @@ function ManageAppointments() {
     const fetchAppointments = async () => {
       setLoading(true);
       try {
-        const params = user.role === 'Consultant' ? { consultantId: user.consultantId } : {};
+        // Không truyền consultantId, backend sẽ xử lý dựa trên vai trò
         const response = await apiClient.get('/appointments', {
-          params,
           withCredentials: true
         });
         if (Array.isArray(response.data)) {
@@ -189,7 +188,7 @@ function ManageAppointments() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người đặt</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tư vấn viên</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link họp</th>
@@ -202,8 +201,14 @@ function ManageAppointments() {
                     return (
                       <tr key={appointment.appointmentId} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{appointment.userFullName || 'Không xác định'}</div>
-                          <div className="text-sm text-gray-500">{appointment.userEmail || 'Không có email'}</div>
+                          <div className="text-sm font-medium text-gray-900">{appointment.consultantFullName || 'Không xác định'}</div>
+                          <div className="text-sm text-gray-500">{appointment.consultantEmail || 'Không có email'}</div>
+                          <div className="text-sm text-gray-500">
+                            Trình độ: {appointment.consultantQualification || 'Chưa có thông tin'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Kinh nghiệm: {appointment.consultantExperienceYears ? `${appointment.consultantExperienceYears} năm` : 'Chưa có thông tin'}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-900">{date}</div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import NotificationDropdown from "./NotificationDropdown";
 import "./Header.css";
 
 function Header() {
@@ -37,10 +38,11 @@ function Header() {
   const canManageRoles = user && user.permissions?.includes('MANAGE_ROLES');
   const canManageUsers = user && user.permissions?.includes('MANAGE_USERS');
   const canManageSurveys = user && user.permissions?.includes('MANAGE_SURVEYS');
+  const canManageNotifications = user && user.permissions?.includes('MANAGE_NOTIFICATIONS');
 
   return (
     <header
-      className={`fixed w-full top-0 left-0 z-50 transition-all duration-300 ${  
+      className={`fixed w-full top-0 left-0 z-50 transition-all duration-300 ${
         scrolled ? "bg-white shadow-md py-3" : "bg-white/90 backdrop-blur-sm py-5"
       }`}
     >
@@ -78,12 +80,22 @@ function Header() {
                 Lịch hẹn của tôi
               </Link>
             )}
+            {isAuthenticated && (
+              <Link to="/notifications" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
+                Thông báo
+              </Link>
+            )}
             <Link to="/contact" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
               Liên hệ
             </Link>
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
+          
+            {isAuthenticated && (
+              <NotificationDropdown />
+            )}
+          
             {(isAdmin || canManageUsers || canManageRoles || canManageSurveys) && (
               <div className="relative group">
                 <button className="flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 rounded-full p-2.5 w-10 h-10">
@@ -127,6 +139,14 @@ function Header() {
                         </svg>
                         Quản lý khóa học
                       </Link>
+                      {canManageNotifications && (
+                        <Link to="/notification-management" className="block w-full text-left px-4 py-3 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center">
+                          <svg className="h-5 w-5 mr-2 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                          </svg>
+                          <strong>Quản lý thông báo</strong>
+                        </Link>
+                      )}
                     </>
                   )}
                   {canManageSurveys && (
@@ -137,6 +157,7 @@ function Header() {
                       Quản lý khảo sát
                     </Link>
                   )}
+                  {/* Đã có link tới trang quản lý thông báo ở trên, không cần link tạo thông báo riêng */}
                 </div>
               </div>
             )}
@@ -254,6 +275,25 @@ function Header() {
                 Lịch hẹn của tôi
               </Link>
             )}
+            {isAuthenticated && (
+              <Link
+                to="/notifications"
+                className="block py-2.5 text-blue-600 font-medium text-lg flex items-center"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Thông báo của tôi
+              </Link>
+            )}
+            <Link
+              to="/contact"
+              className="block py-2.5 text-gray-700 text-lg"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Liên hệ
+            </Link>
             {(isAdmin || canManageUsers || canManageRoles || canManageSurveys) && (
               <>
                 <div className="py-2.5 text-gray-700 text-lg font-medium">
@@ -305,6 +345,18 @@ function Header() {
                       </svg>
                       Quản lý khóa học
                     </Link>
+                    {canManageNotifications && (
+                      <Link
+                        to="/notification-management"
+                        className="block py-2.5 pl-4 text-blue-700 font-medium text-lg flex items-center bg-blue-50 rounded-lg mx-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <svg className="h-5 w-5 mr-2 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        Quản lý thông báo
+                      </Link>
+                    )}
                   </>
                 )}
                 {canManageSurveys && (
@@ -319,55 +371,8 @@ function Header() {
                     Quản lý khảo sát
                   </Link>
                 )}
+                {/* Đã có link tới trang quản lý thông báo ở trên, không cần link tạo thông báo riêng */}
               </>
-            )}
-            <Link
-              to="/contact"
-              className="block py-2.5 text-gray-700 text-lg"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Liên hệ
-            </Link>
-            {isAuthenticated ? (
-              <>
-                <Link
-                  to="/profile"
-                  className="block py-2.5 text-gray-700 text-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Thông tin cá nhân
-                </Link>
-                <Link
-                  to="/my-courses"
-                  className="block py-2.5 text-gray-700 text-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Khóa học của tôi
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left py-2.5 text-red-600 text-lg"
-                >
-                  Đăng xuất
-                </button>
-              </>
-            ) : (
-              <div className="flex flex-col space-y-2 mt-2 pt-2 border-t border-gray-200">
-                <Link
-                  to="/login"
-                  className="block py-2.5 text-blue-600 font-medium text-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Đăng nhập
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-blue-600 text-white font-medium rounded-lg py-2.5 px-5 text-center text-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Đăng ký
-                </Link>
-              </div>
             )}
           </div>
         )}

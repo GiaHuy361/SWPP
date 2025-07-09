@@ -50,6 +50,13 @@ import SurveyTypeManagement from './pages/SurveyTypeManagement'; // Thêm import
 import SurveyListManagement from './pages/SurveyListManagement'; // Thêm import
 import SurveyQuestionManagement from './pages/SurveyQuestionManagement'; // Thêm import
 import SurveyOptionManagement from './pages/SurveyOptionManagement'; // Thêm import
+import ModuleCreateForm from './pages/courses/ModuleCreateForm';
+import ModuleEditForm from './pages/courses/ModuleEditForm';
+import LessonCreateForm from './pages/courses/LessonCreateForm';
+import LessonEditForm from './pages/courses/LessonEditForm';
+import QuizAttemptPage from './pages/QuizAttemptPage'; // Import trang QuizAttemptPage
+import NotificationsPage from './pages/NotificationsPage';
+import NotificationManagement from './pages/NotificationManagement';
 
 function App() {
   return (
@@ -79,9 +86,12 @@ function App() {
               <Route path="/create-user" element={<PrivateRoute requiredPermission="MANAGE_USERS"><CreateUserPage /></PrivateRoute>} />
               <Route path="/edit-user/:id" element={<PrivateRoute requiredPermission="MANAGE_USERS"><EditUserPage /></PrivateRoute>} />
               <Route path="/role-permissions" element={<PrivateRoute requiredPermission="MANAGE_ROLES"><RolePermissionPage /></PrivateRoute>} />
+              <Route path="/notifications" element={<PrivateRoute requiredPermission="VIEW_NOTIFICATIONS"><NotificationsPage /></PrivateRoute>} />
+              <Route path="/notification-management" element={<PrivateRoute requiredPermission="MANAGE_NOTIFICATIONS"><NotificationManagement /></PrivateRoute>} />
               <Route path="/courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CourseListPage /></PrivateRoute>} />
               <Route path="/courses/:courseId/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCoursePage /></PrivateRoute>} /> {/* Giữ nguyên */}
               <Route path="/courses/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCourseListPage /></PrivateRoute>} />
+              <Route path="/courses/:courseId/quizzes/:quizId" element={<PrivateRoute requiredPermission="VIEW_COURSES"><QuizAttemptPage /></PrivateRoute>} />
               <Route path="/courses/:courseId/*" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CoursePage /></PrivateRoute>} /> {/* Giữ nguyên như phiên bản cũ */}
               <Route path="/my-courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><MyCoursesPage /></PrivateRoute>} />
               <Route path="/certificate/:courseId" element={<CertificatePage />} />
@@ -96,6 +106,12 @@ function App() {
               <Route path="/admin/courses/:courseId/modules" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><ModuleManagement /></PrivateRoute>} />
               <Route path="/admin/courses/:courseId/modules/:moduleId/lessons" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><LessonManagement /></PrivateRoute>} />
               <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/:lessonId/quizzes" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><QuizManagement /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules/create" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><ModuleCreateForm /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules/:moduleId/edit" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><ModuleEditForm /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/create" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><LessonCreateForm /></PrivateRoute>} />
+              <Route path="/admin/courses/:courseId/modules/:moduleId/lessons/:lessonId/edit" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><LessonEditForm /></PrivateRoute>} />
+              
+
               <Route path="/admin/courses/:courseId/students" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><StudentManagement /></PrivateRoute>} />
               <Route path="/admin/courses/:courseId/certificates" element={<PrivateRoute requiredPermission={["ROLE_Admin", "ROLE_Staff", "ROLE_Manager"]}><CertificateManagement /></PrivateRoute>} />
               
@@ -106,6 +122,9 @@ function App() {
               <Route path="/surveys/manage/list" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyListManagement /></PrivateRoute>} />
               <Route path="/surveys/manage/questions" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyQuestionManagement /></PrivateRoute>} />
               <Route path="/surveys/manage/options" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyOptionManagement /></PrivateRoute>} />
+              <Route path="/notifications" element={<PrivateRoute requiredPermission="VIEW_NOTIFICATIONS"><NotificationsPage /></PrivateRoute>} />
+              <Route path="/notifications/manage" element={<PrivateRoute requiredPermission="MANAGE_NOTIFICATIONS"><NotificationManagement /></PrivateRoute>} />
+
 
               <Route path="/access-denied" element={<AccessDenied />} />
               <Route path="/register" element={<RegisterPage />} />

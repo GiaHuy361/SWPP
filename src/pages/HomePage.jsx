@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { FiCheck, FiStar, FiUsers, FiBook, FiAward } from "react-icons/fi";
 import HeroSection from "../components/HeroSection";
 import FeatureSection from "../components/FeatureSection";
-import TestimonialSection from "../components/TestimonialSection";
 
 const HomePage = () => {
   const features = [

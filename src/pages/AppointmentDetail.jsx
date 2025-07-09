@@ -151,6 +151,12 @@ function AppointmentDetail() {
               <label className="block text-sm font-medium text-gray-700">Tư vấn viên</label>
               <p className="mt-1 text-gray-900">{appointment.consultantFullName || 'Chưa xác định'}</p>
               <p className="text-sm text-gray-500">{appointment.consultantEmail || 'Không có email'}</p>
+              <p className="text-sm text-gray-500">
+                Trình độ: {appointment.consultantQualification || 'Chưa có thông tin'}
+              </p>
+              <p className="text-sm text-gray-500">
+                Kinh nghiệm: {appointment.consultantExperienceYears ? `${appointment.consultantExperienceYears} năm` : 'Chưa có thông tin'}
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Thời gian</label>

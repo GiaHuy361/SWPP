@@ -128,7 +128,7 @@ function BookAppointment() {
               <option value="">Chọn tư vấn viên</option>
               {consultants.map((consultant) => (
                 <option key={consultant.consultantId} value={consultant.consultantId}>
-                  {consultant.fullName} ({consultant.email})
+                  {consultant.fullName} - Trình độ: {consultant.qualification || 'Chưa có thông tin'} - Kinh nghiệm: {consultant.experienceYears ? `${consultant.experienceYears} năm` : 'Chưa có thông tin'}
                 </option>
               ))}
             </select>

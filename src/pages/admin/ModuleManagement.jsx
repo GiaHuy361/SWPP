@@ -4,6 +4,7 @@ import axios from '../../utils/axios';
 import { toast } from 'react-toastify';
 import { Modal } from '../../components/ui/Modal';
 
+
 export default function ModuleManagement() {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -46,27 +47,41 @@ export default function ModuleManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log('🔍 Đang gửi dữ liệu module:', formData);
+      
       // Chuẩn hóa payload đúng với CourseModuleDTO
       const moduleData = {
-        id: editingModule ? editingModule.id : undefined,
-        courseId: parseInt(courseId),
         title: formData.title,
-        description: formData.description,
-        position: parseInt(formData.orderIndex)
+        description: formData.description || '',
+        position: parseInt(formData.orderIndex || 0),
+        courseId: parseInt(courseId)
       };
 
+      // Thêm id nếu đang chỉnh sửa module
+      if (editingModule && editingModule.id) {
+        moduleData.id = editingModule.id;
+      }
+
+      console.log('🔍 Dữ liệu module cuối cùng:', moduleData);
+
+      let response;
       if (editingModule) {
-        await axios.put(`/courses/${courseId}/modules/${editingModule.id}`, moduleData);
+        console.log(`🔄 Đang cập nhật module ${editingModule.id}`);
+        response = await axios.put(`/courses/${courseId}/modules/${editingModule.id}`, moduleData);
         toast.success('Cập nhật module thành công');
       } else {
-        await axios.post(`/courses/${courseId}/modules`, moduleData);
+        console.log('➕ Đang tạo module mới');
+        response = await axios.post(`/courses/${courseId}/modules`, moduleData);
         toast.success('Tạo module thành công');
       }
 
+      console.log('✅ Phản hồi từ server:', response.data);
+      
       resetForm();
       fetchData();
     } catch (error) {
-      console.error('Error saving module:', error);
+      console.error('❌ Lỗi khi lưu module:', error);
+      console.error('❌ Chi tiết lỗi:', error.response?.data);
       toast.error(editingModule ? 'Có lỗi khi cập nhật module' : 'Có lỗi khi tạo module');
     }
   };
@@ -85,13 +100,45 @@ export default function ModuleManagement() {
 
   const handleDelete = async (moduleId) => {
     try {
+      console.log(`🗑️ Đang xóa module ${moduleId}`);
       await axios.delete(`/courses/${courseId}/modules/${moduleId}`);
       toast.success('Xóa module thành công');
       fetchData();
       setDeleteConfirm(null);
     } catch (error) {
-      console.error('Error deleting module:', error);
+      console.error('❌ Lỗi khi xóa module:', error);
+      console.error('❌ Chi tiết lỗi:', error.response?.data);
       toast.error('Có lỗi khi xóa module');
+    }
+  };
+  
+  const handleReorder = async (moduleId, newOrderIndex) => {
+    try {
+      console.log(`🔄 Đang thay đổi thứ tự module ${moduleId} sang vị trí ${newOrderIndex}`);
+      
+      // Find the module to update
+      const moduleToUpdate = modules.find(m => m.id === moduleId);
+      if (!moduleToUpdate) {
+        console.error(`❌ Không tìm thấy module với ID ${moduleId}`);
+        return;
+      }
+      
+      // Cập nhật module với position mới
+      const updateData = {
+        ...moduleToUpdate,
+        position: newOrderIndex
+      };
+      
+      // Gọi API để cập nhật position
+      await axios.put(`/courses/${courseId}/modules/${moduleId}`, updateData);
+      toast.success('Thay đổi thứ tự thành công');
+      
+      // Refresh data to show the new order
+      fetchData();
+    } catch (error) {
+      console.error('❌ Lỗi khi thay đổi thứ tự module:', error);
+      console.error('❌ Chi tiết lỗi:', error.response?.data);
+      toast.error('Có lỗi khi thay đổi thứ tự module');
     }
   };
 
