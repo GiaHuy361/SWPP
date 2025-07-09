@@ -15,8 +15,7 @@ const NotificationManagement = () => {
         message: '',
         type: 'SYSTEM',
         isSystemNotification: true,
-        userId: null,
-        email: ''
+        userId: null
     });
     const [formErrors, setFormErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
@@ -129,25 +128,21 @@ const NotificationManagement = () => {
         setFormData({
             ...formData,
             isSystemNotification: isSystem,
-            userId: isSystem ? null : formData.userId,
-            email: isSystem ? '' : formData.email
+            userId: isSystem ? null : formData.userId
         });
     };
 
     const handleUserSelect = (e) => {
         const selectedUserId = e.target.value;
-        const selectedUser = users.find(u => u.userId.toString() === selectedUserId);
-        
         setFormData({
             ...formData,
-            userId: selectedUserId ? parseInt(selectedUserId) : null,
-            email: selectedUser ? selectedUser.email : ''
+            userId: selectedUserId ? parseInt(selectedUserId) : null
         });
         
-        if (formErrors.email) {
+        if (formErrors.userId) {
             setFormErrors({
                 ...formErrors,
-                email: ''
+                userId: ''
             });
         }
     };
@@ -166,29 +161,13 @@ const NotificationManagement = () => {
             isValid = false;
         }
 
-        if (!formData.isSystemNotification && !formData.email.trim() && !formData.userId) {
-            errors.email = 'Vui lòng chọn người nhận hoặc nhập email';
+        if (!formData.isSystemNotification && !formData.userId) {
+            errors.userId = 'Vui lòng chọn người nhận';
             isValid = false;
         }
 
         setFormErrors(errors);
         return isValid;
-    };
-
-    const getUserIdFromEmail = async () => {
-        if (!formData.email.trim()) return null;
-        
-        try {
-            const response = await notificationService.getUserIdByEmail(formData.email);
-            return response.userId;
-        } catch (error) {
-            console.error('Error getting userId:', error);
-            setFormErrors({
-                ...formErrors,
-                email: 'Email không tồn tại trong hệ thống'
-            });
-            return null;
-        }
     };
 
     const handleSubmit = async (e) => {
@@ -199,39 +178,27 @@ const NotificationManagement = () => {
         setIsSubmitting(true);
         
         try {
-            let userId = formData.userId;
-            
-            if (!formData.isSystemNotification && !userId && formData.email) {
-                userId = await getUserIdFromEmail();
-                if (!userId) {
-                    setIsSubmitting(false);
-                    return;
-                }
-            }
-            
-            let recipientName = '';
-            let recipientEmail = formData.email;
-            
-            if (userId && !formData.isSystemNotification) {
-                const selectedUser = users.find(user => user.userId.toString() === userId.toString());
-                if (selectedUser) {
-                    recipientName = selectedUser.fullName || selectedUser.username;
-                    recipientEmail = selectedUser.email;
-                }
-            }
-            
             const notificationData = {
                 title: formData.title,
                 message: formData.message,
                 type: formData.type,
                 isSystemNotification: formData.isSystemNotification,
-                userId: userId,
-                recipientName: recipientName,
-                recipientEmail: recipientEmail
+                userId: formData.isSystemNotification ? null : formData.userId,
+                recipientName: formData.isSystemNotification ? '' : (users.find(user => user.userId.toString() === formData.userId?.toString())?.fullName || ''),
+                recipientEmail: ''
             };
             
-            // Sử dụng endpoint /api/notifications/send
-            await notificationService.createNotificationWithSendEndpoint(notificationData);
+            // Gửi thông báo và lấy dữ liệu trả về
+            const response = await notificationService.createNotificationWithSendEndpoint(notificationData);
+            
+            // Thêm thông báo mới vào danh sách
+            if (!formData.isSystemNotification) {
+                // Thông báo cá nhân: Thêm trực tiếp response vào notifications
+                setNotifications(prev => [response, ...prev]);
+            } else {
+                // Thông báo hệ thống: Làm mới từ server
+                await fetchAllNotifications();
+            }
             
             setShowCreateModal(false);
             setFormData({
@@ -239,17 +206,14 @@ const NotificationManagement = () => {
                 message: '',
                 type: 'SYSTEM',
                 isSystemNotification: true,
-                userId: null,
-                email: ''
+                userId: null
             });
             
             setSuccessMessage('Gửi thông báo thành công');
             setTimeout(() => setSuccessMessage(''), 3000);
-            
-            fetchAllNotifications();
         } catch (error) {
             console.error('Error creating notification:', error);
-            setError('Không thể gửi thông báo. Vui lòng thử lại sau.');
+            setError(`Không thể gửi thông báo. Mã lỗi: ${error.response?.status || 'Unknown'}. ${error.response?.data?.message || ''}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -351,7 +315,7 @@ const NotificationManagement = () => {
                     <div>
                         <h1 className="text-2xl font-bold text-blue-800 mb-2">Quản lý Thông báo</h1>
                         <p className="text-blue-600">Gửi và quản lý thông báo hệ thống hoặc cá nhân</p>
-                        {user?.role === 'Manager' && (
+                        {permissions.includes('MANAGE_NOTIFICATIONS') && (
                             <div className="mt-2 text-sm">
                                 <span className="mr-4">
                                     <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>
@@ -422,7 +386,7 @@ const NotificationManagement = () => {
                         </select>
                     </div>
                     
-                    {user?.role === 'Manager' && (
+                    {permissions.includes('MANAGE_NOTIFICATIONS') && (
                         <div className="md:w-1/3">
                             <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">
                                 Lọc theo trạng thái
@@ -459,7 +423,7 @@ const NotificationManagement = () => {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Người nhận
                                     </th>
-                                    {user?.role === 'Manager' && (
+                                    {permissions.includes('MANAGE_NOTIFICATIONS') && (
                                         <>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Thời gian
@@ -467,12 +431,10 @@ const NotificationManagement = () => {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Trạng thái
                                             </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Hành động
+                                            </th>
                                         </>
-                                    )}
-                                    {permissions.includes('MANAGE_NOTIFICATIONS') && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Hành động
-                                        </th>
                                     )}
                                 </tr>
                             </thead>
@@ -503,7 +465,7 @@ const NotificationManagement = () => {
                                                 : <span className="text-gray-400">Không xác định</span>
                                             }
                                         </td>
-                                        {user?.role === 'Manager' && (
+                                        {permissions.includes('MANAGE_NOTIFICATIONS') && (
                                             <>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {formatDateTime(notification.createdAt)}
@@ -518,17 +480,15 @@ const NotificationManagement = () => {
                                                         {notification.isRead ? 'Đã đọc' : 'Chưa đọc'}
                                                     </button>
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <button 
+                                                        onClick={() => handleDeleteNotification(notification.notificationId)}
+                                                        className="text-red-600 hover:text-red-900"
+                                                    >
+                                                        Xóa
+                                                    </button>
+                                                </td>
                                             </>
-                                        )}
-                                        {permissions.includes('MANAGE_NOTIFICATIONS') && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                <button 
-                                                    onClick={() => handleDeleteNotification(notification.notificationId)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Xóa
-                                                </button>
-                                            </td>
                                         )}
                                     </tr>
                                 ))}
@@ -607,20 +567,8 @@ const NotificationManagement = () => {
                                             ))
                                         )}
                                     </select>
-                                    
-                                    <div className="text-gray-500 text-xs mb-2">Hoặc nhập email người nhận</div>
-                                    
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        className={`shadow appearance-none border ${formErrors.email ? 'border-red-500' : 'border-gray-300'} rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline`}
-                                        placeholder="Nhập email người nhận"
-                                    />
-                                    {formErrors.email && (
-                                        <p className="text-red-500 text-xs italic">{formErrors.email}</p>
+                                    {formErrors.userId && (
+                                        <p className="text-red-500 text-xs italic">{formErrors.userId}</p>
                                     )}
                                 </div>
                             )}

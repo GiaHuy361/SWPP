@@ -38,7 +38,7 @@ function Header() {
   const canManageRoles = user && user.permissions?.includes('MANAGE_ROLES');
   const canManageUsers = user && user.permissions?.includes('MANAGE_USERS');
   const canManageSurveys = user && user.permissions?.includes('MANAGE_SURVEYS');
-  const canManageNotifications = user && (user.permissions?.includes('MANAGE_NOTIFICATIONS') || user.permissions?.includes('SEND_NOTIFICATION')); // Thêm SEND_NOTIFICATION
+  const canManageNotifications = user && (user.permissions?.includes('MANAGE_NOTIFICATIONS') || user.permissions?.includes('SEND_NOTIFICATION'));
 
   return (
     <header
@@ -78,11 +78,6 @@ function Header() {
             {canBookAppointments && (
               <Link to="/my-appointments" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
                 Lịch hẹn của tôi
-              </Link>
-            )}
-            {isAuthenticated && (
-              <Link to="/notifications" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
-                Thông báo
               </Link>
             )}
             <Link to="/contact" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
@@ -155,7 +150,6 @@ function Header() {
                       Quản lý khảo sát
                     </Link>
                   )}
-                  {/* Đã có link tới trang quản lý thông báo ở trên, không cần link tạo thông báo riêng */}
                 </div>
               </div>
             )}
@@ -273,18 +267,6 @@ function Header() {
                 Lịch hẹn của tôi
               </Link>
             )}
-            {isAuthenticated && (
-              <Link
-                to="/notifications"
-                className="block py-2.5 text-blue-600 font-medium text-lg flex items-center"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                Thông báo của tôi
-              </Link>
-            )}
             <Link
               to="/contact"
               className="block py-2.5 text-gray-700 text-lg"
@@ -369,7 +351,6 @@ function Header() {
                     Quản lý khảo sát
                   </Link>
                 )}
-                {/* Đã có link tới trang quản lý thông báo ở trên, không cần link tạo thông báo riêng */}
               </>
             )}
           </div>
