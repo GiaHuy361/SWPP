@@ -46,6 +46,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authz -> authz
                         // API công khai (permitAll)
+                        .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login-google").permitAll()
@@ -193,6 +194,27 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/communication/feedback/{feedbackId}").hasAuthority("MANAGE_PROGRAMS")
                         .requestMatchers(HttpMethod.POST, "/api/communication/{programId}/join").hasAuthority("VIEW_PROGRAMS")
                         .requestMatchers(HttpMethod.GET, "/api/communication/{programId}/summary").hasAuthority("VIEW_PROGRAMS")
+                       //api blog
+                        .requestMatchers(HttpMethod.GET,    "/api/blogposts/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,   "/api/blogposts").hasAuthority("MANAGE_BLOGS")
+                        .requestMatchers(HttpMethod.PUT,    "/api/blogposts/**").hasAuthority("MANAGE_BLOGS")
+                        .requestMatchers(HttpMethod.DELETE, "/api/blogposts/**").hasAuthority("MANAGE_BLOGS")
+                        //api Comment
+                        .requestMatchers(HttpMethod.POST, "/api/blogposts/*/comments").hasAuthority("CREATE_COMMENTS")
+                        .requestMatchers(HttpMethod.GET,  "/api/blogposts/*/comments").permitAll()
+                        //api Bookmark
+                        // ✅ Phân quyền Bookmark chuẩn
+                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/check/**").hasAuthority("VIEW_BLOGS")
+                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS") // Nếu có API GET khác
+                        .requestMatchers(HttpMethod.POST, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
+                        .requestMatchers(HttpMethod.PUT, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
+                        .requestMatchers(HttpMethod.DELETE, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
+                        //api Reaction
+                        .requestMatchers(HttpMethod.GET,    "/api/reactions/**").hasAuthority("REACT_POSTS")
+                        .requestMatchers(HttpMethod.POST,   "/api/reactions").hasAuthority("REACT_POSTS")
+                        .requestMatchers(HttpMethod.PUT,    "/api/reactions/**").hasAuthority("REACT_POSTS")
+                        .requestMatchers(HttpMethod.DELETE, "/api/reactions/**").hasAuthority("REACT_POSTS")
+
                         // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )
