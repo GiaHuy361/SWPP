@@ -38,6 +38,13 @@ public class BlogPostController {
         return ResponseEntity.ok(posts);
     }
 
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority('MANAGE_BLOGS')")
+    public ResponseEntity<Page<BlogPostDTO>> getAllPosts(Pageable pageable) {
+        Page<BlogPostDTO> posts = blogPostService.getAllPosts(pageable);
+        return ResponseEntity.ok(posts);
+    }
+
     @GetMapping("/{slug}")
     @PreAuthorize("hasAuthority('VIEW_BLOGS')")
     public ResponseEntity<BlogPostDTO> getPostBySlug(@PathVariable String slug, Authentication authentication, HttpServletRequest request) {

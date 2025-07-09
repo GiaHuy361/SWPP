@@ -12,6 +12,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -46,7 +49,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authz -> authz
                         // API công khai (permitAll)
-                        .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blogposts/*/comments").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login-google").permitAll()
@@ -54,6 +57,45 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/verify-code").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/admin/role-permissions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blogposts/published").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blogposts/{slug}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/{slug}").permitAll()
+                        // API yêu cầu xác thực và quyền cụ thể
+                        .requestMatchers(HttpMethod.POST, "/api/blogposts/*/comments")
+                            .access(AuthorizationManagers.allOf(
+                                AuthenticatedAuthorizationManager.authenticated(),
+                                AuthorityAuthorizationManager.hasAuthority("CREATE_COMMENTS")))
+                        .requestMatchers(HttpMethod.GET, "/api/blogposts/all")
+                            .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_BLOGS"))
+                        .requestMatchers(HttpMethod.POST, "/api/blogposts")
+                            .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_BLOGS"))
+                        .requestMatchers(HttpMethod.PUT, "/api/blogposts/{id}")
+                            .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_BLOGS"))
+                        .requestMatchers(HttpMethod.DELETE, "/api/blogposts/{id}")
+                            .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_BLOGS"))
+                        .requestMatchers(HttpMethod.POST, "/api/blogposts/{id}/publish")
+                            .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_BLOGS"))
+                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/check/**")
+                            .access(AuthorityAuthorizationManager.hasAuthority("VIEW_BLOGS"))
+                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/**")
+                            .access(AuthorityAuthorizationManager.hasAuthority("BOOKMARK_POSTS"))
+                        .requestMatchers(HttpMethod.POST, "/api/bookmarks/**")
+                            .access(AuthorityAuthorizationManager.hasAuthority("BOOKMARK_POSTS"))
+                        .requestMatchers(HttpMethod.PUT, "/api/bookmarks/**")
+                            .access(AuthorityAuthorizationManager.hasAuthority("BOOKMARK_POSTS"))
+                        .requestMatchers(HttpMethod.DELETE, "/api/bookmarks/**")
+                            .access(AuthorityAuthorizationManager.hasAuthority("BOOKMARK_POSTS"))
+                        .requestMatchers(HttpMethod.GET, "/api/posts/*/reactions/**")
+                            .access(AuthorityAuthorizationManager.hasAuthority("REACT_POSTS"))
+                        .requestMatchers(HttpMethod.POST, "/api/posts/*/reactions")
+                            .access(AuthorityAuthorizationManager.hasAuthority("REACT_POSTS"))
+                        .requestMatchers(HttpMethod.PUT, "/api/posts/*/reactions/**")
+                            .access(AuthorityAuthorizationManager.hasAuthority("REACT_POSTS"))
+                        .requestMatchers(HttpMethod.DELETE, "/api/posts/*/reactions/**")
+                            .access(AuthorityAuthorizationManager.hasAuthority("REACT_POSTS"))
+                        .requestMatchers(HttpMethod.POST, "/api/categories")
+                            .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_CATEGORIES"))
                         // API yêu cầu xác thực
                         .requestMatchers(HttpMethod.GET, "/api/auth/user").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/auth/users/{email}").authenticated()
@@ -147,33 +189,25 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/courses/*/quizzes").hasAuthority("MANAGE_COURSES")
                         .requestMatchers(HttpMethod.PUT, "/api/courses/*/quizzes/**").hasAuthority("MANAGE_COURSES")
                         .requestMatchers(HttpMethod.DELETE, "/api/courses/*/quizzes/**").hasAuthority("MANAGE_COURSES")
-                        // API question của quiz
                         .requestMatchers(HttpMethod.GET, "/api/quizzes/*/questions").hasAuthority("VIEW_COURSES")
                         .requestMatchers(HttpMethod.POST, "/api/quizzes/*/questions").hasAuthority("MANAGE_COURSES")
                         .requestMatchers(HttpMethod.PUT, "/api/quizzes/*/questions/**").hasAuthority("MANAGE_COURSES")
                         .requestMatchers(HttpMethod.DELETE, "/api/quizzes/*/questions/**").hasAuthority("MANAGE_COURSES")
-                        // API answer của question
                         .requestMatchers(HttpMethod.GET, "/api/questions/*/answers").hasAuthority("VIEW_COURSES")
                         .requestMatchers(HttpMethod.POST, "/api/questions/*/answers").hasAuthority("MANAGE_COURSES")
                         .requestMatchers(HttpMethod.PUT, "/api/questions/*/answers/**").hasAuthority("MANAGE_COURSES")
                         .requestMatchers(HttpMethod.DELETE, "/api/questions/*/answers/**").hasAuthority("MANAGE_COURSES")
-                        // API submission của quiz
                         .requestMatchers(HttpMethod.POST, "/api/quizzes/*/submissions").hasAuthority("SUBMIT_QUIZ")
                         .requestMatchers(HttpMethod.GET, "/api/quizzes/*/submissions").hasAuthority("VIEW_PROGRESS")
-                        // API answer của submission
                         .requestMatchers(HttpMethod.POST, "/api/submissions/*/questions/*/answers/*").hasAuthority("SUBMIT_QUIZ")
                         .requestMatchers(HttpMethod.DELETE, "/api/submissions/*/questions/*/answers/**").hasAuthority("MANAGE_COURSES")
-                        // API certificate
                         .requestMatchers(HttpMethod.POST, "/api/enrollments/*/certificates").hasAuthority("MANAGE_COURSES")
                         .requestMatchers(HttpMethod.GET, "/api/enrollments/*/certificates").hasAuthority("VIEW_CERTIFICATES")
-                        // API tiến độ học viên
                         .requestMatchers(HttpMethod.POST, "/api/progress/lessons/*/complete").hasAuthority("COMPLETE_LESSON")
                         .requestMatchers(HttpMethod.GET, "/api/progress/courses/*").hasAuthority("VIEW_PROGRESS")
-                        // API ghi danh
                         .requestMatchers(HttpMethod.POST, "/api/enrollments/courses/*").hasAuthority("ENROLL_COURSES")
                         .requestMatchers(HttpMethod.GET, "/api/enrollments/user").hasAuthority("VIEW_COURSES")
-                        // API thông báo (Notifications)
-                        .requestMatchers(HttpMethod.GET, "/api/notifications/user-id/{email}").hasAuthority("SEND_NOTIFICATION") // Đổi từ MANAGE_NOTIFICATIONS sang SEND_NOTIFICATION
+                        .requestMatchers(HttpMethod.GET, "/api/notifications/user-id/{email}").hasAuthority("SEND_NOTIFICATION")
                         .requestMatchers(HttpMethod.POST, "/api/notifications").hasAuthority("MANAGE_NOTIFICATIONS")
                         .requestMatchers(HttpMethod.POST, "/api/notifications/send").hasAuthority("SEND_NOTIFICATION")
                         .requestMatchers(HttpMethod.GET, "/api/notifications").hasAuthority("VIEW_NOTIFICATIONS")
@@ -182,8 +216,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/notifications/{id}").hasAuthority("MANAGE_NOTIFICATIONS")
                         .requestMatchers(HttpMethod.PUT, "/api/notifications/{id}/read").hasAuthority("VIEW_NOTIFICATIONS")
                         .requestMatchers(HttpMethod.DELETE, "/api/notifications/{id}").hasAuthority("MANAGE_NOTIFICATIONS")
-                        .requestMatchers(HttpMethod.GET, "/api/notifications/users").hasAuthority("SEND_NOTIFICATION") // Thêm dòng này cho endpoint lấy danh sách người dùng
-                        // API truyền thông (Communication)
+                        .requestMatchers(HttpMethod.GET, "/api/notifications/users").hasAuthority("SEND_NOTIFICATION")
                         .requestMatchers(HttpMethod.POST, "/api/communication").hasAuthority("MANAGE_PROGRAMS")
                         .requestMatchers(HttpMethod.GET, "/api/communication").hasAuthority("VIEW_PROGRAMS")
                         .requestMatchers(HttpMethod.GET, "/api/communication/{programId}").hasAuthority("VIEW_PROGRAMS")
@@ -196,26 +229,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/communication/feedback/{feedbackId}").hasAuthority("MANAGE_PROGRAMS")
                         .requestMatchers(HttpMethod.POST, "/api/communication/{programId}/join").hasAuthority("VIEW_PROGRAMS")
                         .requestMatchers(HttpMethod.GET, "/api/communication/{programId}/summary").hasAuthority("VIEW_PROGRAMS")
-                        //api blog
-                        .requestMatchers(HttpMethod.GET,    "/api/blogposts/**").permitAll()
-                        .requestMatchers(HttpMethod.POST,   "/api/blogposts").hasAuthority("MANAGE_BLOGS")
-                        .requestMatchers(HttpMethod.PUT,    "/api/blogposts/**").hasAuthority("MANAGE_BLOGS")
-                        .requestMatchers(HttpMethod.DELETE, "/api/blogposts/**").hasAuthority("MANAGE_BLOGS")
-                        //api Comment
-                        .requestMatchers(HttpMethod.POST, "/api/blogposts/*/comments").hasAuthority("CREATE_COMMENTS")
-                        .requestMatchers(HttpMethod.GET,  "/api/blogposts/*/comments").permitAll()
-                        //api Bookmark
-                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/check/**").hasAuthority("VIEW_BLOGS")
-                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
-                        .requestMatchers(HttpMethod.POST, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
-                        .requestMatchers(HttpMethod.PUT, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
-                        .requestMatchers(HttpMethod.DELETE, "/api/bookmarks/**").hasAuthority("BOOKMARK_POSTS")
-                        //api Reaction
-                        .requestMatchers(HttpMethod.GET,    "/api/reactions/**").hasAuthority("REACT_POSTS")
-                        .requestMatchers(HttpMethod.POST,   "/api/reactions").hasAuthority("REACT_POSTS")
-                        .requestMatchers(HttpMethod.PUT,    "/api/reactions/**").hasAuthority("REACT_POSTS")
-                        .requestMatchers(HttpMethod.DELETE, "/api/reactions/**").hasAuthority("REACT_POSTS")
-                        // Tất cả các yêu cầu khác yêu cầu xác thực
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider());
