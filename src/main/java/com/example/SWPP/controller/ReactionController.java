@@ -16,13 +16,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.Map;
 import java.util.Optional;
 
-/**
- * Controller cho Reaction, cung cấp các API RESTful để quản lý reaction của người dùng cho bài viết.
- * Bao gồm lấy reaction của người dùng, thiết lập reaction, và xóa reaction.
- * Yêu cầu quyền REACT_POSTS cho tất cả các hành động.
- */
 @RestController
 @RequestMapping("/api/posts/{postId}/reactions")
 public class ReactionController {
@@ -73,6 +69,12 @@ public class ReactionController {
 
         reactionService.removeUserReaction(userId, postId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/counts")
+    public ResponseEntity<Map<String, Long>> getReactionCounts(@PathVariable Long postId) {
+        Map<String, Long> counts = reactionService.getReactionCounts(postId);
+        return ResponseEntity.ok(counts);
     }
 
     private Long getUserId(Authentication authentication) {

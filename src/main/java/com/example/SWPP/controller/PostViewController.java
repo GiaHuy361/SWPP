@@ -1,21 +1,18 @@
 package com.example.SWPP.controller;
 
+import com.example.SWPP.entity.PostView;
 import com.example.SWPP.entity.User;
 import com.example.SWPP.repository.UserRepository;
 import com.example.SWPP.service.PostViewService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
-/**
- * Controller cho PostView, cung cấp API RESTful để ghi nhận lượt xem bài viết.
- * Endpoint công khai, không yêu cầu xác thực.
- */
 @RestController
 @RequestMapping("/api/posts/{postId}/views")
 public class PostViewController {
@@ -29,25 +26,67 @@ public class PostViewController {
     }
 
     /**
-     * Ghi nhận một lượt xem cho bài viết.
-     * @param postId ID của bài viết.
-     * @param authentication Authentication để lấy username nếu có.
-     * @param xForwardedFor Header X-Forwarded-For để lấy IP qua proxy.
-     * @param remoteAddr Remote address nếu không có proxy.
-     * @return ResponseEntity với status 201 (Created).
+     * Ghi nhận lượt xem cho bài viết, yêu cầu đăng nhập.
+     * @param postId ID bài viết.
+     * @param authentication Thông tin xác thực người dùng.
+     * @param request Request để lấy IP.
+     * @return Response 201 nếu thành công, 401 nếu chưa đăng nhập.
      */
     @PostMapping
-    public ResponseEntity<Void> recordView(@PathVariable Long postId, Authentication authentication, @RequestHeader(value = "X-Forwarded-For", required = false) String xForwardedFor, @RequestHeader(value = "Remote-Addr", required = false) String remoteAddr) {
-        String ipAddress = xForwardedFor != null ? xForwardedFor : remoteAddr;
-        Optional<Long> userId = Optional.empty();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            logger.info("Lấy userId từ username: {}", username);
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
-            userId = Optional.of(user.getUserId());
+    public ResponseEntity<Void> recordView(
+            @PathVariable Long postId,
+            Authentication authentication,
+            HttpServletRequest request) {
+        logger.info("Ghi nhận lượt xem cho postId: {}", postId);
+
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            logger.warn("Yêu cầu đăng nhập để ghi nhận lượt xem cho postId: {}", postId);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        postViewService.recordView(postId, userId, ipAddress);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+
+        String principal = authentication.getName();
+        User user = userRepository.findByUsername(principal)
+                .or(() -> userRepository.findByEmail(principal))
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng: " + principal));
+        Long userId = user.getUserId();
+
+        // Lấy IP từ X-Forwarded-For hoặc Remote-Addr
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null || ipAddress.isEmpty()) {
+            ipAddress = request.getRemoteAddr();
+        }
+        if (ipAddress == null) {
+            ipAddress = "unknown";
+            logger.warn("Không xác định được IP cho postId: {}", postId);
+        }
+
+        try {
+            PostView view = postViewService.recordView(postId, userId, ipAddress);
+            if (view == null) {
+                logger.info("Lượt xem không được ghi nhận do đã tồn tại cho postId: {}, userId: {}", postId, userId);
+                return ResponseEntity.status(HttpStatus.OK).build();
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Lỗi khi ghi nhận lượt xem cho postId: {} - {}", postId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    /**
+     * Lấy số lượt xem của bài viết.
+     * @param postId ID bài viết.
+     * @return Số lượt xem.
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Long> getViewCount(@PathVariable Long postId) {
+        logger.info("Lấy số lượt xem cho postId: {}", postId);
+        try {
+            long count = postViewService.countViewsByPostId(postId);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            logger.error("Lỗi khi lấy số lượt xem cho postId: {} - {}", postId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

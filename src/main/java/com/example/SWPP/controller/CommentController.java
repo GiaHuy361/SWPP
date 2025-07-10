@@ -32,7 +32,6 @@ public class CommentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('VIEW_BLOGS')")
     public ResponseEntity<List<CommentDTO>> getCommentsByPost(@PathVariable Long postId) {
         List<CommentDTO> comments = commentService.getCommentsByPost(postId);
         return ResponseEntity.ok(comments);
@@ -50,7 +49,6 @@ public class CommentController {
 
         String principal = authentication.getName();
 
-        // Luôn tìm theo username OR email
         User user = userRepository.findByUsername(principal)
                 .or(() -> userRepository.findByEmail(principal))
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy user: " + principal));

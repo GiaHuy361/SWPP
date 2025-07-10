@@ -13,12 +13,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.HashMap;
 
-/**
- * Service cho Reaction, xử lý logic nghiệp vụ liên quan đến reaction.
- * Bao gồm thiết lập và xóa reaction của người dùng cho bài viết.
- */
 @Service
 public class ReactionService {
     private static final Logger logger = LoggerFactory.getLogger(ReactionService.class);
@@ -32,26 +30,12 @@ public class ReactionService {
         this.blogPostRepository = blogPostRepository;
     }
 
-    /**
-     * Lấy reaction của người dùng cho bài viết.
-     * @param userId ID của người dùng.
-     * @param postId ID của bài viết.
-     * @return Optional chứa ReactionDTO nếu tồn tại, không thì Optional.empty().
-     */
     public Optional<ReactionDTO> getUserReaction(Long userId, Long postId) {
         logger.info("Lấy reaction của user ID: {} cho post ID: {}", userId, postId);
         return reactionRepository.findByUserUserIdAndPostId(userId, postId)
                 .map(ReactionMapper::toDto);
     }
 
-    /**
-     * Thiết lập reaction của người dùng cho bài viết, tạo mới hoặc cập nhật nếu đã tồn tại.
-     * @param userId ID của người dùng.
-     * @param postId ID của bài viết.
-     * @param type Loại reaction.
-     * @return ReactionDTO chứa thông tin reaction.
-     * @throws IllegalArgumentException nếu người dùng hoặc bài viết không tồn tại.
-     */
     @Transactional
     public ReactionDTO setUserReaction(Long userId, Long postId, Reaction.ReactionType type) {
         logger.info("Thiết lập reaction {} cho user ID: {} và post ID: {}", type, userId, postId);
@@ -74,17 +58,20 @@ public class ReactionService {
         return ReactionMapper.toDto(reaction);
     }
 
-    /**
-     * Xóa reaction của người dùng cho bài viết.
-     * @param userId ID của người dùng.
-     * @param postId ID của bài viết.
-     * @throws IllegalArgumentException nếu reaction không tồn tại.
-     */
     @Transactional
     public void removeUserReaction(Long userId, Long postId) {
         logger.info("Xóa reaction của user ID: {} cho post ID: {}", userId, postId);
         Reaction reaction = reactionRepository.findByUserUserIdAndPostId(userId, postId)
                 .orElseThrow(() -> new IllegalArgumentException("Reaction không tồn tại"));
         reactionRepository.delete(reaction);
+    }
+
+    public Map<String, Long> getReactionCounts(Long postId) {
+        logger.info("Lấy số lượt reaction cho post ID: {}", postId);
+        Map<String, Long> counts = new HashMap<>();
+        counts.put("LIKE", reactionRepository.countByPostIdAndType(postId, Reaction.ReactionType.LIKE));
+        counts.put("LOVE", reactionRepository.countByPostIdAndType(postId, Reaction.ReactionType.LOVE));
+        counts.put("APPLAUSE", reactionRepository.countByPostIdAndType(postId, Reaction.ReactionType.APPLAUSE));
+        return counts;
     }
 }

@@ -7,6 +7,8 @@ import com.example.SWPP.service.BlogPostService;
 import com.example.SWPP.service.PostViewService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ import java.util.Optional;
 @RequestMapping("/api/blogposts")
 public class BlogPostController {
 
+    private static final Logger logger = LoggerFactory.getLogger(BlogPostController.class);
     private final BlogPostService blogPostService;
     private final PostViewService postViewService;
     private final UserRepository userRepository;
@@ -32,8 +35,8 @@ public class BlogPostController {
     }
 
     @GetMapping("/published")
-    @PreAuthorize("hasAuthority('VIEW_BLOGS')")
     public ResponseEntity<Page<BlogPostDTO>> getPublishedPosts(Pageable pageable) {
+        logger.info("Lấy danh sách bài viết đã xuất bản, page: {}", pageable.getPageNumber());
         Page<BlogPostDTO> posts = blogPostService.getPublishedPosts(pageable);
         return ResponseEntity.ok(posts);
     }
@@ -41,33 +44,61 @@ public class BlogPostController {
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('MANAGE_BLOGS')")
     public ResponseEntity<Page<BlogPostDTO>> getAllPosts(Pageable pageable) {
+        logger.info("Lấy tất cả bài viết, page: {}", pageable.getPageNumber());
         Page<BlogPostDTO> posts = blogPostService.getAllPosts(pageable);
         return ResponseEntity.ok(posts);
     }
 
     @GetMapping("/{slug}")
-    @PreAuthorize("hasAuthority('VIEW_BLOGS')")
     public ResponseEntity<BlogPostDTO> getPostBySlug(@PathVariable String slug, Authentication authentication, HttpServletRequest request) {
+        logger.info("Lấy bài viết với slug: {}", slug);
         BlogPostDTO post = blogPostService.getPostBySlug(slug);
 
-        String principal = authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())
-                ? authentication.getName()
-                : null;
-
-        Optional<Long> userId = Optional.empty();
-        if (principal != null) {
+        // Lấy userId nếu người dùng đã đăng nhập
+        Long userId = null;
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+            String principal = authentication.getName();
             Optional<User> userOpt = userRepository.findByUsername(principal);
             if (userOpt.isEmpty()) {
                 userOpt = userRepository.findByEmail(principal);
             }
-            User user = userOpt.orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
-            userId = Optional.of(user.getUserId());
+            User user = userOpt.orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại: " + principal));
+            userId = user.getUserId();
         }
 
-        String ipAddress = request.getRemoteAddr();
-        postViewService.recordView(post.getId(), userId, ipAddress);
+        // Lấy địa chỉ IP
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null || ipAddress.isEmpty()) {
+            ipAddress = request.getRemoteAddr();
+        }
+        if (ipAddress == null) {
+            ipAddress = "unknown";
+            logger.warn("Không xác định được IP cho slug: {}", slug);
+        }
+
+        // Ghi nhận lượt xem nếu đã đăng nhập
+        if (userId != null) {
+            try {
+                postViewService.recordView(post.getId(), userId, ipAddress);
+            } catch (IllegalArgumentException e) {
+                logger.warn("Không ghi nhận lượt xem cho postId {}: {}", post.getId(), e.getMessage());
+            }
+        }
 
         return ResponseEntity.ok(post);
+    }
+
+    @GetMapping("/id/{id}")
+    @PreAuthorize("hasAuthority('MANAGE_BLOGS')")
+    public ResponseEntity<BlogPostDTO> getPostById(@PathVariable Long id) {
+        logger.info("Lấy bài viết với id: {}", id);
+        try {
+            BlogPostDTO post = blogPostService.getPostById(id);
+            return ResponseEntity.ok(post);
+        } catch (IllegalArgumentException e) {
+            logger.error("Không tìm thấy bài viết với id: {} - {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @PostMapping

@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +68,18 @@ public class BlogPostService {
     }
 
     /**
+     * Lấy chi tiết bài viết theo ID.
+     * @param id ID của bài viết.
+     * @return BlogPostDTO của bài viết.
+     */
+    public BlogPostDTO getPostById(Long id) {
+        logger.info("Lấy bài viết với ID: {}", id);
+        BlogPost post = blogPostRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bài viết với ID: " + id));
+        return BlogPostMapper.toDto(post);
+    }
+
+    /**
      * Tạo bài viết mới.
      * @param dto BlogPostDTO chứa thông tin bài viết.
      * @param userId ID của người dùng tạo bài viết.
@@ -76,21 +87,17 @@ public class BlogPostService {
      */
     @Transactional
     public BlogPostDTO createPost(BlogPostDTO dto, Long userId) {
-        logger.info("Tạo bài viết với tiêu đề: {}", dto.getTitle());
+        logger.info("Tạo bài viết với tiêu đề: {}, userId: {}", dto.getTitle(), userId);
 
         User author = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
-
-        if (!author.getRole().getRoleName().matches("Admin|Manager|Staff")) {
-            throw new AccessDeniedException("Bạn không có quyền tạo bài viết");
-        }
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại với ID: " + userId));
 
         Category category = categoryRepository.findById(dto.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("Danh mục không tồn tại"));
+                .orElseThrow(() -> new IllegalArgumentException("Danh mục không tồn tại với ID: " + dto.getCategoryId()));
 
         BlogPost post = BlogPostMapper.toEntity(dto, author, category);
         post.setSlug(generateUniqueSlug(dto.getTitle()));
-        post.setPublishedAt(dto.getPublishedAt());
+        post.setAuthorName(dto.getAuthorName() != null ? dto.getAuthorName() : author.getFullName());
 
         post = blogPostRepository.save(post);
 
@@ -116,17 +123,12 @@ public class BlogPostService {
                 .or(() -> userRepository.findByEmail(principal))
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
 
-        boolean isAdmin = user.getRole().getRoleName().equals("Admin");
-        boolean isAuthor = post.getAuthor().getUserId().equals(user.getUserId());
-
-        if (!isAdmin && !isAuthor) {
-            throw new AccessDeniedException("Bạn không có quyền sửa bài viết này");
-        }
-
         post.setTitle(dto.getTitle());
         post.setExcerpt(dto.getExcerpt());
         post.setContent(dto.getContent());
+        post.setImageUrl(dto.getImageUrl());
         post.setUpdatedAt(LocalDateTime.now());
+        post.setAuthorName(dto.getAuthorName() != null ? dto.getAuthorName() : user.getFullName());
 
         if (dto.getPublishedAt() != null) {
             post.setPublishedAt(dto.getPublishedAt());
@@ -166,13 +168,6 @@ public class BlogPostService {
                 .or(() -> userRepository.findByEmail(principal))
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
 
-        boolean isAdmin = user.getRole().getRoleName().equals("Admin");
-        boolean isAuthor = post.getAuthor().getUserId().equals(user.getUserId());
-
-        if (!isAdmin && !isAuthor) {
-            throw new AccessDeniedException("Bạn không có quyền xóa bài viết này");
-        }
-
         blogPostRepository.delete(post);
         logger.info("Đã xóa bài viết ID: {}", id);
     }
@@ -193,13 +188,6 @@ public class BlogPostService {
         User user = userRepository.findByUsername(principal)
                 .or(() -> userRepository.findByEmail(principal))
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
-
-        boolean isAdmin = user.getRole().getRoleName().equals("Admin");
-        boolean isAuthor = post.getAuthor().getUserId().equals(user.getUserId());
-
-        if (!isAdmin && !isAuthor) {
-            throw new AccessDeniedException("Bạn không có quyền xuất bản bài viết này");
-        }
 
         if (post.getPublishedAt() == null) {
             post.setPublishedAt(LocalDateTime.now());

@@ -35,21 +35,29 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Vô hiệu hóa CSRF vì sử dụng API REST
+                .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .sessionFixation().migrateSession()
-                        .maximumSessions(1) // Giới hạn một phiên đăng nhập mỗi người dùng
-                )
+                        .maximumSessions(1))
                 .securityContext(security -> security.requireExplicitSave(false))
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
-                        .accessDeniedHandler((req, res, e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied"))
-                )
+                        .authenticationEntryPoint((req, res, e) -> {
+                            System.out.println("Authentication failed for URL: " + req.getRequestURI());
+                            res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        })
+                        .accessDeniedHandler((req, res, e) -> {
+                            System.out.println("Access denied for URL: " + req.getRequestURI());
+                            res.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
+                        }))
                 .authorizeHttpRequests(authz -> authz
-                        // API công khai (permitAll)
+                        // API công khai (không cần đăng nhập)
+                        .requestMatchers(HttpMethod.GET, "/api/blogposts/published").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blogposts/{slug}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/blogposts/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/{slug}").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login-google").permitAll()
@@ -57,11 +65,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/verify-code").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/admin/role-permissions").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/blogposts/published").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/blogposts/{slug}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/{slug}").permitAll()
-                        // API yêu cầu xác thực và quyền cụ thể
+                       .requestMatchers(HttpMethod.POST, "/api/posts/*/views").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/check/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/*/reactions/counts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/*/views/count").permitAll()
+                        // API yêu cầu đăng nhập và quyền cụ thể
                         .requestMatchers(HttpMethod.POST, "/api/blogposts/*/comments")
                             .access(AuthorizationManagers.allOf(
                                 AuthenticatedAuthorizationManager.authenticated(),
@@ -76,8 +84,8 @@ public class SecurityConfig {
                             .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_BLOGS"))
                         .requestMatchers(HttpMethod.POST, "/api/blogposts/{id}/publish")
                             .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_BLOGS"))
-                        .requestMatchers(HttpMethod.GET, "/api/bookmarks/check/**")
-                            .access(AuthorityAuthorizationManager.hasAuthority("VIEW_BLOGS"))
+                            .requestMatchers(HttpMethod.GET, "/api/blogposts/id/{id}")
+        .access(AuthorityAuthorizationManager.hasAuthority("MANAGE_BLOGS"))
                         .requestMatchers(HttpMethod.GET, "/api/bookmarks/**")
                             .access(AuthorityAuthorizationManager.hasAuthority("BOOKMARK_POSTS"))
                         .requestMatchers(HttpMethod.POST, "/api/bookmarks/**")
@@ -229,6 +237,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/communication/feedback/{feedbackId}").hasAuthority("MANAGE_PROGRAMS")
                         .requestMatchers(HttpMethod.POST, "/api/communication/{programId}/join").hasAuthority("VIEW_PROGRAMS")
                         .requestMatchers(HttpMethod.GET, "/api/communication/{programId}/summary").hasAuthority("VIEW_PROGRAMS")
+                        .requestMatchers(HttpMethod.GET, "/api/communication/{programId}/participant-count").hasAuthority("VIEW_PROGRAMS")
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider());

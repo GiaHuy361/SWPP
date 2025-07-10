@@ -24,6 +24,12 @@ public class BlogPost {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "author_name")
+    private String authorName; // Thêm trường authorName
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -76,6 +82,10 @@ public class BlogPost {
     public void setExcerpt(String excerpt) { this.excerpt = excerpt; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getAuthorName() { return authorName; }
+    public void setAuthorName(String authorName) { this.authorName = authorName; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

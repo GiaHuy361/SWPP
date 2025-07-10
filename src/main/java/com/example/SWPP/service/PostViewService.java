@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * Service cho PostView, xử lý logic nghiệp vụ liên quan đến lượt xem bài viết.
- * Bao gồm ghi nhận lượt xem từ người dùng hoặc IP.
+ * Service xử lý logic liên quan đến lượt xem bài viết.
  */
 @Service
 public class PostViewService {
@@ -31,35 +31,57 @@ public class PostViewService {
     }
 
     /**
-     * Ghi nhận một lượt xem cho bài viết.
-     * @param postId ID của bài viết.
-     * @param userId ID của người dùng (nếu có).
-     * @param ipAddress Địa chỉ IP của người xem.
-     * @return PostView entity vừa tạo.
-     * @throws IllegalArgumentException nếu bài viết không tồn tại.
+     * Ghi nhận lượt xem cho bài viết, chỉ khi người dùng đăng nhập.
+     * Chỉ ghi nhận nếu chưa có lượt xem từ cùng userId trong 24 giờ.
+     * @param postId ID bài viết.
+     * @param userId ID người dùng (bắt buộc).
+     * @param ipAddress Địa chỉ IP (không sử dụng nếu chỉ cần đăng nhập).
+     * @return PostView entity vừa tạo hoặc null nếu không ghi nhận.
+     * @throws IllegalArgumentException nếu bài viết hoặc người dùng không tồn tại.
      */
     @Transactional
-    public PostView recordView(Long postId, Optional<Long> userId, String ipAddress) {
-        logger.info("Ghi nhận lượt xem cho post ID: {}, user ID: {}, IP: {}", postId, userId.orElse(null), ipAddress);
+    public PostView recordView(Long postId, Long userId, String ipAddress) {
+        logger.info("Bắt đầu ghi nhận lượt xem: postId={}, userId={}, ip={}", postId, userId, ipAddress);
+
+        if (userId == null) {
+            logger.warn("Không ghi nhận lượt xem: Yêu cầu đăng nhập (userId null)");
+            throw new IllegalArgumentException("Yêu cầu đăng nhập để ghi nhận lượt xem.");
+        }
+
         BlogPost post = blogPostRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("Bài viết không tồn tại"));
+                .orElseThrow(() -> new IllegalArgumentException("Bài viết không tồn tại: " + postId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại: " + userId));
+
+        // Kiểm tra xem có lượt xem nào từ cùng userId trong 24 giờ qua không
+        LocalDateTime oneDayAgo = LocalDateTime.now().minusHours(24);
+        boolean viewExists = postViewRepository.existsByPostIdAndUserUserIdAndViewedAtAfter(postId, userId, oneDayAgo);
+
+        if (viewExists) {
+            logger.info("Lượt xem đã tồn tại cho postId={} từ userId={}", postId, userId);
+            return null; // Không ghi nhận lượt xem mới
+        }
+
         PostView view = new PostView();
         view.setPost(post);
-        if (userId.isPresent()) {
-            User user = userRepository.findById(userId.get())
-                    .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
-            view.setUser(user);
-        }
+        view.setUser(user);
         view.setIpAddress(ipAddress);
-        return postViewRepository.save(view);
+
+        PostView savedView = postViewRepository.save(view);
+        logger.info("Đã lưu lượt xem: postId={}, viewId={}, userId={}", postId, savedView.getId(), userId);
+        return savedView;
     }
 
     /**
      * Đếm số lượt xem của bài viết.
-     * @param postId ID của bài viết.
+     * @param postId ID bài viết.
      * @return Số lượt xem.
      */
     public long countViewsByPostId(Long postId) {
-        return postViewRepository.countByPostId(postId);
+        logger.info("Đếm lượt xem cho postId: {}", postId);
+        long count = postViewRepository.countByPostId(postId);
+        logger.info("Số lượt xem cho postId {}: {}", postId, count);
+        return count;
     }
 }

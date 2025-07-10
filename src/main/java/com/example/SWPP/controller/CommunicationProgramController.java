@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class CommunicationProgramController {
 
     private static final Logger logger = LoggerFactory.getLogger(CommunicationProgramController.class);
-    private static final LocalDateTime CURRENT_TIME = LocalDateTime.of(2025, 7, 7, 14, 26); // 02:26 PM +07
+    private static final LocalDateTime CURRENT_TIME = LocalDateTime.of(2025, 7, 7, 14, 26);
 
     private final CommunicationProgramService communicationProgramService;
     private final UserRepository userRepository;
@@ -123,6 +123,20 @@ public class CommunicationProgramController {
             logger.error("Failed to fetch program for id={}: {}", programId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Lấy thông tin chương trình thất bại"));
+        }
+    }
+
+    @GetMapping("/{programId}/participant-count")
+    @PreAuthorize("hasAuthority('VIEW_PROGRAMS')")
+    public ResponseEntity<?> getParticipantCount(@PathVariable Long programId) {
+        logger.info("Fetching participant count for program id: {}", programId);
+        try {
+            int participantCount = communicationProgramService.countParticipants(programId);
+            return ResponseEntity.ok(Map.of("programId", programId, "participantCount", participantCount));
+        } catch (Exception e) {
+            logger.error("Failed to fetch participant count for program id={}: {}", programId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Lấy số lượng người tham gia thất bại: " + e.getMessage()));
         }
     }
 
@@ -283,9 +297,7 @@ public class CommunicationProgramController {
     public ResponseEntity<?> joinProgram(@PathVariable Long programId, Authentication authentication) {
         logger.info("User attempting to join program with id: {}", programId);
         try {
-            // Lấy email từ Authentication
             String email = authentication.getName();
-            // Tìm userId từ email
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại với email: " + email));
             Long userId = user.getUserId();
