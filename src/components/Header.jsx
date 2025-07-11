@@ -83,19 +83,11 @@ function Header() {
                 Khảo sát
               </Link>
             )}
-            {canManageAppointments && (
-              <Link to="/manage-appointments" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
-                Quản lý lịch hẹn
-              </Link>
-            )}
             {canBookAppointments && (
               <Link to="/my-appointments" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
                 Lịch hẹn của tôi
               </Link>
             )}
-            <Link to="/contact" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
-              Liên hệ
-            </Link>
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
@@ -304,15 +296,6 @@ function Header() {
                 Khảo sát
               </Link>
             )}
-            {canManageAppointments && (
-              <Link
-                to="/manage-appointments"
-                className="block py-2.5 text-gray-700 text-lg"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Quản lý lịch hẹn
-              </Link>
-            )}
             {canBookAppointments && (
               <Link
                 to="/my-appointments"
@@ -322,13 +305,6 @@ function Header() {
                 Lịch hẹn của tôi
               </Link>
             )}
-            <Link
-              to="/contact"
-              className="block py-2.5 text-gray-700 text-lg"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Liên hệ
-            </Link>
             {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications || canManageBlogs || canManageCategories || canManagePrograms) && (
               <>
                 <div className="py-2.5 text-gray-700 text-lg font-medium">
