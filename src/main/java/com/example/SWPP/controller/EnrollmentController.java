@@ -31,7 +31,7 @@ public class EnrollmentController {
         this.enrollmentService = enrollmentService;
         this.userRepository = userRepository;
     }
-
+//
     @GetMapping("/count")
     @PreAuthorize("hasAuthority('MANAGE_ENROLLMENTS')")
     public ResponseEntity<?> getUniqueEnrolledUsersCount() {

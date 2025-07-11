@@ -2,7 +2,7 @@ package com.example.SWPP.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
+//
 @Entity
 @Table(name = "Enrollment", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "course_id"}))
 public class Enrollment {

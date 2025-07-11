@@ -2,7 +2,7 @@ package com.example.SWPP.mapper;
 
 import com.example.SWPP.dto.EnrollmentDTO;
 import com.example.SWPP.entity.Enrollment;
-
+//
 public class EnrollmentMapper {
     public static EnrollmentDTO toDto(Enrollment enrollment) {
         EnrollmentDTO dto = new EnrollmentDTO();
