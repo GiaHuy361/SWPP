@@ -28,8 +28,7 @@ function Header() {
       setMobileMenuOpen(false);
     }
   };
-  
-  // Kiểm tra quyền dựa trên permissions
+
   const isAdmin = user && user.permissions?.includes('MANAGE_COURSES');
   const canManageAppointments = user && user.permissions?.includes('MANAGE_APPOINTMENTS');
   const canBookAppointments = user && user.permissions?.includes('BOOK_APPOINTMENTS');
@@ -37,33 +36,27 @@ function Header() {
   const canManageRoles = user && user.permissions?.includes('MANAGE_ROLES');
   const canManageUsers = user && user.permissions?.includes('MANAGE_USERS');
   const canManageSurveys = user && user.permissions?.includes('MANAGE_SURVEYS');
-  const canViewPrograms = user && user.permissions?.includes('VIEW_PROGRAMS');
-  const canManagePrograms = user && user.permissions?.includes('MANAGE_PROGRAMS');
   const canManageNotifications = user && (user.permissions?.includes('MANAGE_NOTIFICATIONS') || user.permissions?.includes('SEND_NOTIFICATION'));
   const canViewBlogs = user && user.permissions?.includes('VIEW_BLOGS');
   const canManageBlogs = user && user.permissions?.includes('MANAGE_BLOGS');
   const canManageCategories = user && user.permissions?.includes('MANAGE_CATEGORIES');
-  
-  // Kiểm tra người dùng có bất kỳ quyền quản lý nào không
-  const hasManagementPermission = isAdmin || canManageAppointments || canManageRoles || 
-                                canManageUsers || canManageSurveys || canManageNotifications || 
-                                canManageBlogs || canManageCategories || canManagePrograms;
+  const canViewPrograms = user && user.permissions?.includes('VIEW_PROGRAMS');
+  const canManagePrograms = user && user.permissions?.includes('MANAGE_PROGRAMS');
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full m-0 p-0 ${
-        scrolled ? "bg-white shadow-lg" : "bg-white"
-      } transition-all duration-300 border-b border-gray-200`}
-      style={{ margin: 0, padding: 0 }}
+      className={`fixed w-full top-0 left-0 z-50 transition-all duration-300 ${
+        scrolled ? "bg-white shadow-md py-3" : "bg-white/90 backdrop-blur-sm py-5"
+      }`}
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8" style={{ paddingTop: 0, paddingBottom: 0 }}>
-        <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-3 py-1">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex items-center">
             <div className="mr-3 relative">
-              <img src="/hero.png" alt="Logo" className="h-10 w-auto" />
+              <img src="/hero.png" alt="Logo" className="h-16 w-auto" />
               <div className="absolute -inset-1 rounded-full bg-blue-100 opacity-40 blur-md -z-10"></div>
             </div>
-            <span className="font-bold text-xl text-blue-700">Phòng Chống Ma Túy</span>
+            <span className="font-bold text-2xl text-blue-700">Phòng Chống Ma Túy</span>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-8">
@@ -90,214 +83,177 @@ function Header() {
                 Khảo sát
               </Link>
             )}
+            {canManageAppointments && (
+              <Link to="/manage-appointments" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
+                Quản lý lịch hẹn
+              </Link>
+            )}
             {canBookAppointments && (
               <Link to="/my-appointments" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
                 Lịch hẹn của tôi
               </Link>
             )}
-            {/* Nút quản lý chỉ hiển thị khi người dùng có quyền quản lý */}
-            {hasManagementPermission && (
+            <Link to="/contact" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
+              Liên hệ
+            </Link>
+          </nav>
+
+          <div className="hidden md:flex items-center space-x-4">
+            {isAuthenticated && (
+              <NotificationDropdown />
+            )}
+            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications || canManageBlogs || canManageCategories || canManagePrograms) && (
               <div className="relative group">
-                <button className="text-gray-700 hover:text-blue-600 flex items-center" title="Quản lý">
-                  <div className="p-2 rounded-full hover:bg-blue-50">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                      ></path>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      ></path>
-                    </svg>
-                  </div>
+                <button className="flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 rounded-full p-2.5 w-10 h-10">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.966 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                 </button>
-                <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block z-50">
-                  {isAdmin && (
-                    <Link
-                      to="/admin/dashboard"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
-                      Bảng điều khiển quản trị
-                    </Link>
-                  )}
+                <div className="absolute right-0 w-56 mt-2 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="font-medium text-base text-green-800">Quản lý tài khoản</div>
+                    <div className="text-sm text-gray-500">Chức năng dành cho {user?.role}</div>
+                  </div>
                   {canManageUsers && (
-                    <Link
-                      to="/user-management"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
+                    <Link to="/user-management" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
                       Quản lý người dùng
                     </Link>
                   )}
                   {canManageRoles && (
-                    <Link
-                      to="/role-permissions"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
-                      Phân quyền
+                    <Link to="/role-permissions" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Quản lý phân quyền
                     </Link>
                   )}
+                  {isAdmin && (
+                    <>
+                      <Link to="/admin/dashboard" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                        <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Dashboard Admin
+                      </Link>
+                      <Link to="/admin/courses" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                        <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        Quản lý khóa học
+                      </Link>
+                      {canManageNotifications && (
+                        <Link to="/notifications/manage" className="block w-full text-left px-4 py-3 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center">
+                          <svg className="h-5 w-5 mr-2 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                          </svg>
+                          <strong>Quản lý thông báo</strong>
+                        </Link>
+                      )}
+                    </>
+                  )}
                   {canManageSurveys && (
-                    <Link
-                      to="/surveys/manage"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
+                    <Link to="/surveys/manage" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
                       Quản lý khảo sát
                     </Link>
                   )}
-                  {canManageNotifications && (
-                    <Link
-                      to="/notifications/manage"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
-                      Quản lý thông báo
-                    </Link>
-                  )}
                   {canManageBlogs && (
-                    <Link
-                      to="/blog/manage"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
-                      Quản lý blog
+                    <Link to="/blog/manage" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                      Quản lý Blog
                     </Link>
                   )}
                   {canManageCategories && (
-                    <Link
-                      to="/categories/manage"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
-                      Quản lý danh mục
-                    </Link>
-                  )}
-                  {canManageAppointments && (
-                    <Link
-                      to="/manage-appointments"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
-                      Quản lý lịch hẹn
+                    <Link to="/categories/manage" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                      Quản lý Danh mục
                     </Link>
                   )}
                   {canManagePrograms && (
-                    <Link
-                      to="/admin/communication/programs"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                      style={{ display: 'none' }}
-                    >
+                    <Link to="/admin/communication/programs" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
                       Quản lý chương trình
                     </Link>
                   )}
                 </div>
               </div>
             )}
-
-          </nav>
-
-          <div className="hidden md:flex items-center space-x-6">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-6">
-                {/* Notification Dropdown */}
-                <NotificationDropdown />
-
-                {/* User Menu */}
+              <div className="flex items-center">
                 <div className="relative group">
-                  <button className="inline-flex items-center justify-center p-1.5 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors">
-                    <span className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold uppercase">
-                      {user?.firstName ? user.firstName[0] : "U"}
-                    </span>
-                    <span className="ml-2 font-medium">{user?.firstName || "User"}</span>
-                    <svg
-                      className="w-4 h-4 ml-1 text-gray-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                      ></path>
+                  <button className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full py-2.5 px-5">
+                    <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center uppercase font-bold text-lg">
+                      {user?.fullName?.charAt(0) || '?'}
+                    </div>
+                    <span className="font-medium text-lg">{user?.fullName || 'Người dùng'}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                    >
-                      Hồ sơ
+                  <div className="absolute right-0 w-56 mt-2 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                    <div className="p-4 border-b border-gray-200">
+                      <div className="font-medium text-base">{user?.fullName || 'Người dùng'}</div>
+                    </div>
+                    <Link to="/profile" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                      Thông tin cá nhân
                     </Link>
-
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
-                    >
+                    <Link to="/my-courses" className="block w-full text-left px-4 py-3 text-sm text-blue-700 hover:bg-blue-50">
+                      Khóa học của tôi
+                    </Link>
+                    {canBookAppointments && (
+                      <Link to="/my-appointments" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                        Lịch hẹn của tôi
+                      </Link>
+                    )}
+                    {canViewSurveys && (
+                      <Link to="/surveys" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                        Khảo sát
+                      </Link>
+                    )}
+                    <button onClick={handleLogout} className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100">
                       Đăng xuất
                     </button>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition font-medium"
-                >
+              <>
+                <Link to="/login" className="text-blue-700 hover:text-blue-800 font-medium text-lg py-2 px-4">
                   Đăng nhập
                 </Link>
                 <Link
                   to="/register"
-                  className="text-blue-600 border border-blue-600 px-5 py-2 rounded-md hover:bg-blue-50 transition font-medium"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2.5 px-5 transition-colors text-lg"
                 >
                   Đăng ký
                 </Link>
-              </div>
+              </>
             )}
           </div>
 
           <button
-            className="md:hidden flex items-center"
+            className="md:hidden text-gray-700 hover:text-blue-600"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (
-              <svg
-                className="w-6 h-6 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                ></path>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             ) : (
-              <svg
-                className="w-6 h-6 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                ></path>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             )}
           </button>
@@ -348,6 +304,15 @@ function Header() {
                 Khảo sát
               </Link>
             )}
+            {canManageAppointments && (
+              <Link
+                to="/manage-appointments"
+                className="block py-2.5 text-gray-700 text-lg"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Quản lý lịch hẹn
+              </Link>
+            )}
             {canBookAppointments && (
               <Link
                 to="/my-appointments"
@@ -357,177 +322,127 @@ function Header() {
                 Lịch hẹn của tôi
               </Link>
             )}
-            {/* Nút quản lý cho menu mobile */}
-            {hasManagementPermission && (
-              <div className="block py-2.5 text-gray-700 text-lg relative">
-                <button 
-                  className="flex items-center w-full text-left"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const submenu = document.getElementById('mobile-management-submenu');
-                    submenu.classList.toggle('hidden');
-                  }}
-                >
-                  <div className="flex items-center">
-                    <svg
-                      className="w-6 h-6 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                      ></path>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      ></path>
-                    </svg>
-                    Quản lý
-                  </div>
-                  <svg
-                    className="w-4 h-4 ml-1 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+            <Link
+              to="/contact"
+              className="block py-2.5 text-gray-700 text-lg"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Liên hệ
+            </Link>
+            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications || canManageBlogs || canManageCategories || canManagePrograms) && (
+              <>
+                <div className="py-2.5 text-gray-700 text-lg font-medium">
+                  Quản lý tài khoản:
+                </div>
+                {canManageUsers && (
+                  <Link
+                    to="/user-management"
+                    className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
+                    onClick={() => setMobileMenuOpen(false)}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    ></path>
-                  </svg>
-                </button>
-                <div id="mobile-management-submenu" className="hidden pl-4">
-                  {isAdmin && (
+                    <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Quản lý người dùng
+                  </Link>
+                )}
+                {canManageRoles && (
+                  <Link
+                    to="/role-permissions"
+                    className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Quản lý phân quyền
+                  </Link>
+                )}
+                {isAdmin && (
+                  <>
                     <Link
                       to="/admin/dashboard"
-                      className="block py-2.5 text-gray-700 text-lg"
+                      className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Bảng điều khiển quản trị
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      Dashboard Admin
                     </Link>
-                  )}
-                  {canManageUsers && (
                     <Link
-                      to="/user-management"
-                      className="block py-2.5 text-gray-700 text-lg"
+                      to="/admin/courses"
+                      className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Quản lý người dùng
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      Quản lý khóa học
                     </Link>
-                  )}
-                  {canManageRoles && (
-                    <Link
-                      to="/role-permissions"
-                      className="block py-2.5 text-gray-700 text-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Phân quyền
-                    </Link>
-                  )}
-                  {canManageSurveys && (
-                    <Link
-                      to="/surveys/manage"
-                      className="block py-2.5 text-gray-700 text-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Quản lý khảo sát
-                    </Link>
-                  )}
-                  {canManageNotifications && (
-                    <Link
-                      to="/notifications/manage"
-                      className="block py-2.5 text-gray-700 text-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Quản lý thông báo
-                    </Link>
-                  )}
-                  {canManageBlogs && (
-                    <Link
-                      to="/blog/manage"
-                      className="block py-2.5 text-gray-700 text-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Quản lý blog
-                    </Link>
-                  )}
-                  {canManageCategories && (
-                    <Link
-                      to="/categories/manage"
-                      className="block py-2.5 text-gray-700 text-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Quản lý danh mục
-                    </Link>
-                  )}
-                  {canManageAppointments && (
-                    <Link
-                      to="/manage-appointments"
-                      className="block py-2.5 text-gray-700 text-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Quản lý lịch hẹn
-                    </Link>
-                  )}
-                  {canManagePrograms && (
-                    <Link
-                      to="/admin/communication/programs"
-                      className="block py-2.5 text-gray-700 text-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                      style={{ display: 'none' }}
-                    >
-                      Quản lý chương trình
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )}
-
-            
-            {isAuthenticated ? (
-              <div className="border-t border-gray-200 my-3 pt-3">
-                <Link
-                  to="/profile"
-                  className="block py-2.5 text-gray-700 text-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Hồ sơ
-                </Link>
-                
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left block py-2.5 text-red-600 text-lg"
-                >
-                  Đăng xuất
-                </button>
-              </div>
-            ) : (
-              <div className="border-t border-gray-200 my-3 pt-3">
-                <Link
-                  to="/login"
-                  className="block py-2.5 text-blue-600 text-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Đăng nhập
-                </Link>
-                <Link
-                  to="/register"
-                  className="block py-2.5 text-gray-700 text-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Đăng ký
-                </Link>
-              </div>
+                    {canManageNotifications && (
+                      <Link
+                        to="/notifications/manage"
+                        className="block py-2.5 pl-4 text-blue-700 font-medium text-lg flex items-center bg-blue-50 rounded-lg mx-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <svg className="h-5 w-5 mr-2 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        Quản lý thông báo
+                      </Link>
+                    )}
+                  </>
+                )}
+                {canManageSurveys && (
+                  <Link
+                    to="/surveys/manage"
+                    className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    Quản lý khảo sát
+                  </Link>
+                )}
+                {canManageBlogs && (
+                  <Link
+                    to="/blog/manage"
+                    className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    Quản lý Blog
+                  </Link>
+                )}
+                {canManageCategories && (
+                  <Link
+                    to="/categories/manage"
+                    className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    Quản lý Danh mục
+                  </Link>
+                )}
+                {canManagePrograms && (
+                  <Link
+                    to="/admin/communication/programs"
+                    className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    Quản lý chương trình
+                  </Link>
+                )}
+              </>
             )}
           </div>
         )}
