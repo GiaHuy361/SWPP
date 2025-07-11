@@ -7,13 +7,13 @@ import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import CommunicationMockSwitcher from './components/CommunicationMockSwitcher'; // Thêm import
-import HomePage from './pages/HomePage'; // Đảm bảo import
+import CommunicationMockSwitcher from './components/CommunicationMockSwitcher';
+import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import CreateUserPage from './pages/CreateUserPage';
 import Profile from './pages/Profile';
-import SurveyDetail from './pages/SurveyDetail'; // Đảm bảo import
+import SurveyDetail from './pages/SurveyDetail';
 import BookAppointment from './pages/BookAppointment';
 import ManageAppointments from './pages/ManageAppointments';
 import AppointmentDetail from './pages/AppointmentDetail';
@@ -30,12 +30,11 @@ import NotFoundPage from './pages/NotFoundPage';
 import ContactPage from './pages/ContactPage';
 import MyAppointments from './pages/MyAppointments';
 import EnrollCoursePage from './pages/courses/EnrollCoursePage';
-import CoursePage from './pages/courses/CoursePage'; // Đảm bảo import
+import CoursePage from './pages/courses/CoursePage';
 import CourseListPage from './pages/courses/CourseListPage';
 import EnrollCourseListPage from './pages/courses/EnrollCourseListPage';
 import MyCoursesPage from './pages/courses/MyCoursesPage';
 import CertificatePage from './pages/courses/CertificatePage';
-// Admin Course Management
 import CourseManagement from './pages/admin/CourseManagement';
 import CourseDetail from './pages/admin/CourseDetail';
 import CourseForm from './pages/admin/CourseForm';
@@ -46,11 +45,12 @@ import StudentManagement from './pages/admin/StudentManagement';
 import CertificateManagement from './pages/admin/CertificateManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import RegisterPage from './pages/RegisterPage';
-import SurveyManagement from './pages/SurveyManagement'; // Thêm import
-import SurveyTypeManagement from './pages/SurveyTypeManagement'; // Thêm import
-import SurveyListManagement from './pages/SurveyListManagement'; // Thêm import
-import SurveyQuestionManagement from './pages/SurveyQuestionManagement'; // Thêm import
-import SurveyOptionManagement from './pages/SurveyOptionManagement'; // Thêm import
+import SurveyManagement from './pages/SurveyManagement';
+import SurveyTypeManagement from './pages/SurveyTypeManagement';
+import SurveyListManagement from './pages/SurveyListManagement';
+import SurveyQuestionManagement from './pages/SurveyQuestionManagement';
+import SurveyOptionManagement from './pages/SurveyOptionManagement';
+
 // Communication Program Management
 import {
   CommunicationPrograms,
@@ -63,17 +63,26 @@ import {
   CommunicationProgramForm,
   CommunicationFeedbackManagement
 } from './pages/communication';
+
 // Admin Communication Components
 import CommunicationProgramList from './pages/admin/communication/CommunicationProgramList';
 import AdminCommunicationProgramDetail from './pages/admin/communication/CommunicationProgramDetail';
-// Imports from the second version
+
+// Course Components from second version
 import ModuleCreateForm from './pages/courses/ModuleCreateForm';
 import ModuleEditForm from './pages/courses/ModuleEditForm';
 import LessonCreateForm from './pages/courses/LessonCreateForm';
 import LessonEditForm from './pages/courses/LessonEditForm';
-import QuizAttemptPage from './pages/QuizAttemptPage'; // Import trang QuizAttemptPage
+import QuizAttemptPage from './pages/QuizAttemptPage';
+
+// Blog and Notification Components
 import NotificationsPage from './pages/NotificationsPage';
 import NotificationManagement from './pages/NotificationManagement';
+import BlogPage from './pages/BlogPage';
+import BlogDetailPage from './pages/BlogDetailPage';
+import BlogManagementPage from './pages/BlogManagementPage';
+import BlogFormPage from './pages/BlogFormPage';
+import CategoryManagementPage from './pages/CategoryManagementPage';
 
 function App() {
   return (
@@ -83,7 +92,7 @@ function App() {
           <Header />
           <main className="flex-grow pt-16">
             <Routes>
-              <Route path="/" element={<HomePage />} /> {/* Giữ nguyên như phiên bản cũ */}
+              <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -92,7 +101,7 @@ function App() {
               <Route path="/user-dashboard" element={<UserDashboard />} />
               <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
               <Route path="/surveys" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><Surveys /></PrivateRoute>} />
-              <Route path="/surveys/:id" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyDetail /></PrivateRoute>} /> {/* Giữ nguyên như phiên bản cũ */}
+              <Route path="/surveys/:id" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyDetail /></PrivateRoute>} />
               <Route path="/survey-results" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyResults /></PrivateRoute>} />
               <Route path="/survey-results/:id" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyResults /></PrivateRoute>} />
               <Route path="/book-appointment" element={<PrivateRoute requiredPermission="BOOK_APPOINTMENTS"><BookAppointment /></PrivateRoute>} />
@@ -104,12 +113,12 @@ function App() {
               <Route path="/edit-user/:id" element={<PrivateRoute requiredPermission="MANAGE_USERS"><EditUserPage /></PrivateRoute>} />
               <Route path="/role-permissions" element={<PrivateRoute requiredPermission="MANAGE_ROLES"><RolePermissionPage /></PrivateRoute>} />
               <Route path="/notifications" element={<PrivateRoute requiredPermission="VIEW_NOTIFICATIONS"><NotificationsPage /></PrivateRoute>} />
-              <Route path="/notifications/manage" element={<PrivateRoute requiredPermission={['SEND_NOTIFICATION', 'MANAGE_NOTIFICATIONS']}><NotificationManagement /></PrivateRoute>} /> {/* Sửa quyền */}
+              <Route path="/notifications/manage" element={<PrivateRoute requiredPermission={['SEND_NOTIFICATION', 'MANAGE_NOTIFICATIONS']}><NotificationManagement /></PrivateRoute>} />
               <Route path="/courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CourseListPage /></PrivateRoute>} />
-              <Route path="/courses/:courseId/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCoursePage /></PrivateRoute>} /> {/* Giữ nguyên */}
+              <Route path="/courses/:courseId/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCoursePage /></PrivateRoute>} />
               <Route path="/courses/enroll" element={<PrivateRoute requiredPermission="ENROLL_COURSES"><EnrollCourseListPage /></PrivateRoute>} />
               <Route path="/courses/:courseId/quizzes/:quizId" element={<PrivateRoute requiredPermission="VIEW_COURSES"><QuizAttemptPage /></PrivateRoute>} />
-              <Route path="/courses/:courseId/*" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CoursePage /></PrivateRoute>} /> {/* Giữ nguyên như phiên bản cũ */}
+              <Route path="/courses/:courseId/*" element={<PrivateRoute requiredPermission="VIEW_COURSES"><CoursePage /></PrivateRoute>} />
               <Route path="/my-courses" element={<PrivateRoute requiredPermission="VIEW_COURSES"><MyCoursesPage /></PrivateRoute>} />
               <Route path="/certificate/:courseId" element={<CertificatePage />} />
               
@@ -148,15 +157,24 @@ function App() {
               <Route path="/admin/communication/feedback/:id" element={<PrivateRoute requiredPermission="VIEW_PROGRAMS"><CommunicationFeedback /></PrivateRoute>} />
               <Route path="/admin/communication/feedback/:id/edit" element={<PrivateRoute requiredPermission="MANAGE_PROGRAMS"><CommunicationFeedback /></PrivateRoute>} />
               
-              {/* Thêm route quản lý khảo sát */}
+              {/* Survey Management Routes */}
               <Route path="/surveys/manage" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyManagement /></PrivateRoute>} />
               <Route path="/surveys/manage/types" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyTypeManagement /></PrivateRoute>} />
               <Route path="/surveys/manage/list" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyListManagement /></PrivateRoute>} />
               <Route path="/surveys/manage/questions" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyQuestionManagement /></PrivateRoute>} />
               <Route path="/surveys/manage/options" element={<PrivateRoute requiredPermission="MANAGE_SURVEYS"><SurveyOptionManagement /></PrivateRoute>} />
+              
+              {/* Blog Routes */}
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:slug" element={<BlogDetailPage />} />
+              <Route path="/blog/manage" element={<PrivateRoute requiredPermission="MANAGE_BLOGS"><BlogManagementPage /></PrivateRoute>} />
+              <Route path="/blog/create" element={<PrivateRoute requiredPermission="MANAGE_BLOGS"><BlogFormPage /></PrivateRoute>} />
+              <Route path="/blog/edit/:id" element={<PrivateRoute requiredPermission="MANAGE_BLOGS"><BlogFormPage /></PrivateRoute>} />
+              <Route path="/categories/manage" element={<PrivateRoute requiredPermission="MANAGE_CATEGORIES"><CategoryManagementPage /></PrivateRoute>} />
+              
               <Route path="/access-denied" element={<AccessDenied />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="*" element={<NotFoundPage />} /> {/* Fallback */}
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
           <Footer />

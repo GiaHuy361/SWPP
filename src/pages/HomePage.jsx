@@ -1,22 +1,42 @@
-import React from "react";
-import { Link } from "react-router-dom"; // Thêm dòng này
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiCheck, FiStar, FiUsers, FiBook, FiAward } from "react-icons/fi";
 import HeroSection from "../components/HeroSection";
 import FeatureSection from "../components/FeatureSection";
 import CommunicationOverview from "../components/CommunicationOverview";
+import BlogService from "../services/BlogService";
 
 const HomePage = () => {
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchBlogPosts = async () => {
+      try {
+        const data = await BlogService.getPublishedPosts(0, 3); // Lấy 3 bài đề xuất
+        setBlogPosts(data.content || []);
+      } catch (err) {
+        setError("Không thể tải danh sách bài viết đề xuất.");
+        console.error("Lỗi khi lấy bài viết đề xuất:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBlogPosts();
+  }, []);
+
   const features = [
     {
       icon: <FiUsers className="w-6 h-6" />,
       title: "Thân Thiện Người Dùng",
-      description: "Giao diện trực quan được thiết kế cho trải nghiệm người dùng tốt nhất",
+      description: "Giao diện trực quan được thiết kế cho trải nghiệm tốt nhất",
     },
     {
       icon: <FiStar className="w-6 h-6" />,
       title: "Chất Lượng Cao",
-      description: "Tính năng cao cấp và chức năng dành cho mọi người dùng",
+      description: "Tính năng cao cấp cho mọi người dùng",
     },
     {
       icon: <FiBook className="w-6 h-6" />,
@@ -26,7 +46,7 @@ const HomePage = () => {
     {
       icon: <FiAward className="w-6 h-6" />,
       title: "Hỗ Trợ Tốt Nhất",
-      description: "Đội ngũ hỗ trợ tận tâm 24/7 luôn sẵn sàng phục vụ bạn",
+      description: "Đội ngũ hỗ trợ 24/7 tận tâm",
     },
   ];
 
@@ -61,7 +81,7 @@ const HomePage = () => {
               Tính Năng Tuyệt Vời
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Khám phá các tính năng mạnh mẽ giúp nền tảng của chúng tôi nổi bật
+              Khám phá các tính năng mạnh mẽ giúp nền tảng nổi bật
             </p>
           </motion.div>
 
@@ -120,7 +140,7 @@ const HomePage = () => {
               Cách Thức Hoạt Động
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Các bước đơn giản để bắt đầu sử dụng nền tảng của chúng tôi
+              Các bước đơn giản để bắt đầu sử dụng nền tảng
             </p>
           </motion.div>
 
@@ -129,17 +149,17 @@ const HomePage = () => {
               {
                 step: "01",
                 title: "Tạo Tài Khoản",
-                description: "Đăng ký miễn phí và thiết lập hồ sơ của bạn",
+                description: "Đăng ký miễn phí và thiết lập hồ sơ",
               },
               {
                 step: "02",
                 title: "Khám Phá Tính Năng",
-                description: "Duyệt qua bộ tính năng đa dạng của chúng tôi",
+                description: "Duyệt qua các tính năng đa dạng",
               },
               {
                 step: "03",
                 title: "Đạt Kết Quả",
-                description: "Đạt được mục tiêu với nền tảng của chúng tôi",
+                description: "Đạt mục tiêu với nền tảng",
               },
             ].map((item, index) => (
               <motion.div
@@ -172,10 +192,10 @@ const HomePage = () => {
             className="text-center"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Sẵn Sàng Để Bắt Đầu?
+              Sẵn Sàng Bắt Đầu?
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Tham gia cùng hàng nghìn người dùng hài lòng và bắt đầu hành trình của bạn ngay hôm nay
+              Tham gia cùng hàng nghìn người dùng và bắt đầu ngay hôm nay
             </p>
             <div className="flex justify-center space-x-4">
               <Link to="/register" className="px-8 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">
@@ -198,14 +218,14 @@ const HomePage = () => {
                 Đánh giá mức độ nghiện game
               </h2>
               <p className="text-lg text-gray-600">
-                Hoàn thành bài khảo sát ngắn để đánh giá mức độ nghiện game của bạn và nhận kết quả kèm lời khuyên từ chuyên gia.
+                Hoàn thành khảo sát ngắn để nhận kết quả và lời khuyên.
               </p>
             </div>
 
             <div className="bg-white rounded-lg shadow-md p-8 flex flex-col md:flex-row items-center">
               <div className="md:w-2/3 mb-6 md:mb-0 md:mr-6">
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">
-                  Tại sao nên làm bài khảo sát?
+                  Tại sao nên làm khảo sát?
                 </h3>
                 <ul className="space-y-2 text-gray-700">
                   <li className="flex items-start">
@@ -222,7 +242,7 @@ const HomePage = () => {
                         d="M5 13l4 4L19 7"
                       ></path>
                     </svg>
-                    Đánh giá mức độ nghiện game dựa trên tiêu chuẩn quốc tế
+                    Đánh giá dựa trên tiêu chuẩn quốc tế
                   </li>
                   <li className="flex items-start">
                     <svg
@@ -238,7 +258,7 @@ const HomePage = () => {
                         d="M5 13l4 4L19 7"
                       ></path>
                     </svg>
-                    Nhận kết quả và lời khuyên ngay lập tức
+                    Nhận kết quả và lời khuyên ngay
                   </li>
                   <li className="flex items-start">
                     <svg
@@ -254,7 +274,7 @@ const HomePage = () => {
                         d="M5 13l4 4L19 7"
                       ></path>
                     </svg>
-                    Kết nối với chuyên gia tư vấn nếu cần thiết
+                    Kết nối chuyên gia tư vấn nếu cần
                   </li>
                 </ul>
               </div>
@@ -282,6 +302,52 @@ const HomePage = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Khám Phá Blog Của Chúng Tôi (hiển thị đề xuất) */}
+      <section className="py-12 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-8"
+          >
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              Khám Phá Blog Của Chúng Tôi
+            </h2>
+            <p className="text-lg text-gray-600 mb-6">
+              Một số bài viết hữu ích và thông tin cập nhật mới nhất.
+            </p>
+          </motion.div>
+          {loading && <p className="text-center">Đang tải...</p>}
+          {error && <p className="text-center text-red-600">{error}</p>}
+          {!loading && !error && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {blogPosts.map((post, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="bg-white rounded-lg shadow-lg overflow-hidden"
+                >
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      <Link to={`/blog/${post.slug}`} className="hover:text-blue-600">
+                        {post.title}
+                      </Link>
+                    </h3>
+                    <p className="text-gray-600 mb-4">{post.excerpt}</p>
+                    <Link to={`/blog/${post.slug}`} className="text-blue-600 hover:underline">
+                      Đọc thêm
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
