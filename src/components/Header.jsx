@@ -28,7 +28,6 @@ function Header() {
       setMobileMenuOpen(false);
     }
   };
-
   // Kiểm tra quyền dựa trên permissions
   const isAdmin = user && user.permissions?.includes('MANAGE_COURSES');
   const canManageAppointments = user && user.permissions?.includes('MANAGE_APPOINTMENTS');
@@ -37,6 +36,7 @@ function Header() {
   const canManageRoles = user && user.permissions?.includes('MANAGE_ROLES');
   const canManageUsers = user && user.permissions?.includes('MANAGE_USERS');
   const canManageSurveys = user && user.permissions?.includes('MANAGE_SURVEYS');
+  const canViewPrograms = user && user.permissions?.includes('VIEW_PROGRAMS');
 
   return (
     <header
@@ -58,6 +58,11 @@ function Header() {
             <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
               Trang chủ
             </Link>
+            {canViewPrograms && (
+              <Link to="/communication/programs" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
+                Chương trình truyền thông
+              </Link>
+            )}
             {isAuthenticated && (
               <Link to="/user-dashboard" className="text-gray-700 hover:text-blue-600 font-medium text-lg">
                 Bảng điều khiển
@@ -88,8 +93,7 @@ function Header() {
               <div className="relative group">
                 <button className="flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 rounded-full p-2.5 w-10 h-10">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.966 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                   </svg>
                 </button>
                 <div className="absolute right-0 w-56 mt-2 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
@@ -218,6 +222,15 @@ function Header() {
             >
               Trang chủ
             </Link>
+            {canViewPrograms && (
+              <Link
+                to="/communication/programs"
+                className="block py-2.5 text-gray-700 text-lg"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Chương trình truyền thông
+              </Link>
+            )}
             {isAuthenticated && (
               <Link
                 to="/user-dashboard"

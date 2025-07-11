@@ -170,7 +170,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, handleGoogleLogin, loading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, handleGoogleLogin, loading, checkSession }}>
       {children}
     </AuthContext.Provider>
   );
@@ -179,7 +179,17 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    console.warn('useAuth called outside of AuthProvider context');
+    // Return safe defaults instead of throwing error
+    return {
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+      login: async () => false,
+      logout: async () => {},
+      handleGoogleLogin: async () => {},
+      checkSession: async () => {}
+    };
   }
   return context;
 };

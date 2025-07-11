@@ -5,6 +5,7 @@ import { FiCheck, FiStar, FiUsers, FiBook, FiAward } from "react-icons/fi";
 import HeroSection from "../components/HeroSection";
 import FeatureSection from "../components/FeatureSection";
 import TestimonialSection from "../components/TestimonialSection";
+import CommunicationOverview from "../components/CommunicationOverview";
 
 const HomePage = () => {
   const features = [
@@ -40,6 +41,13 @@ const HomePage = () => {
   return (
     <div className="min-h-screen">
       <HeroSection />
+
+      {/* Communication Overview */}
+      <section className="py-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <CommunicationOverview />
+        </div>
+      </section>
 
       {/* Lưới Tính Năng */}
       <section className="py-20 bg-white">

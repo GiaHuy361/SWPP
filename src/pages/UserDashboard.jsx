@@ -52,6 +52,14 @@ function UserDashboard() {
               Quản lý khóa học
             </Link>
           )}
+          {user.permissions.includes('MANAGE_PROGRAMS') && (
+            <Link 
+              to="/admin/communication/programs" 
+              className="block px-6 py-2 bg-[#1976d2] text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Quản lý chương trình truyền thông
+            </Link>
+          )}
           {user.permissions.includes('VIEW_SURVEYS') && (
             <Link 
               to="/surveys" 
