@@ -195,4 +195,22 @@ public class CommunicationProgramService {
             programRepository.save(program);
         }
     }
+    /**
+     * Lấy danh sách ID chương trình mà user đã tham gia
+     * @param userId ID của user cần kiểm tra
+     * @return Danh sách ID của các chương trình mà user đã tham gia
+     */
+    public List<Long> getUserJoinedProgramIds(Long userId) {
+        return programRepository.findProgramIdsByParticipantId(userId);
+    }
+
+    /**
+     * Kiểm tra xem một user cụ thể đã tham gia chương trình chưa
+     * @param userId ID của user
+     * @param programId ID của chương trình
+     * @return true nếu user đã tham gia, ngược lại false
+     */
+    public boolean hasUserJoinedProgram(Long userId, Long programId) {
+        return programRepository.existsByProgramIdAndParticipantId(programId, userId);
+    }
 }

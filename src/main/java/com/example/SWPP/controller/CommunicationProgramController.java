@@ -339,4 +339,23 @@ public class CommunicationProgramController {
                     .body(Map.of("message", "Lấy thông tin tổng quan thất bại: " + e.getMessage()));
         }
     }
+    /**
+     * Lấy danh sách ID chương trình mà user đã tham gia
+     */
+    @GetMapping("/user/{userId}/joined-programs")
+    public ResponseEntity<List<Long>> getUserJoinedPrograms(@PathVariable Long userId) {
+        List<Long> joinedProgramIds = communicationProgramService.getUserJoinedProgramIds(userId);
+        return ResponseEntity.ok(joinedProgramIds);
+    }
+
+    /**
+     * Kiểm tra trạng thái tham gia của user đối với một chương trình
+     */
+    @GetMapping("/{programId}/participation-status")
+    public ResponseEntity<Boolean> checkUserParticipation(
+            @PathVariable Long programId,
+            @RequestParam Long userId) {
+        boolean hasJoined = communicationProgramService.hasUserJoinedProgram(userId, programId);
+        return ResponseEntity.ok(hasJoined);
+    }
 }
