@@ -3,193 +3,112 @@ import { useParams, Link } from 'react-router-dom';
 import axios from '../../utils/axios';
 import { toast } from 'react-toastify';
 import { Modal } from '../../components/ui/Modal';
-import { getLessonsByModuleId, getQuizByLessonId } from '../../services/courseService';
+import lessonService from '../../services/lessonService';
 
 export default function LessonManagement() {
   const { courseId, moduleId } = useParams();
-  
-  // Debug: Log params immediately
-  useEffect(() => {
-    console.log('🔍 LessonManagement useParams:', { courseId, moduleId });
-    console.log('🔍 Current URL:', window.location.href);
-    console.log('🔍 Current pathname:', window.location.pathname);
-    
-    // Check for invalid chars in params
-    if (courseId?.includes(':') || moduleId?.includes(':')) {
-      console.error('❌ Params contain ":" character:', { courseId, moduleId });
-    }
-  }, [courseId, moduleId]);
-  
   const [course, setCourse] = useState(null);
   const [module, setModule] = useState(null);
   const [lessons, setLessons] = useState([]);
-  const [lessonQuizMap, setLessonQuizMap] = useState({}); // Lưu thông tin về quiz của từng bài học
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [lessonCount, setLessonCount] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
+    contentType: 'TEXT',
     videoUrl: '',
-    position: 0
+    duration: '',
+    orderIndex: 0,
+    isRequired: true,
+    resources: []
   });
 
-  // Helper functions for display
-  const getLessonIcon = () => '📝';
-  const getLessonLabel = () => 'Bài học';
+  const contentTypes = [
+    { value: 'TEXT', label: 'Văn bản' },
+    { value: 'VIDEO', label: 'Video' },
+    { value: 'DOCUMENT', label: 'Tài liệu' },
+    { value: 'INTERACTIVE', label: 'Tương tác' }
+  ];
 
-  // Không cần contentTypes nữa vì backend không có field này
+  const isValidUrl = (string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
 
   useEffect(() => {
     fetchData();
   }, [courseId, moduleId]);
 
-  // Kiểm tra xem bài học có quiz hay không
-  const fetchLessonQuizStatus = async (lessons) => {
-    try {
-      // Tạo một mảng các promise để kiểm tra quiz cho từng bài học
-      const quizPromises = lessons.map(lesson => 
-        getQuizByLessonId(lesson.id)
-          .then(response => ({ 
-            lessonId: lesson.id, 
-            hasQuiz: !!response.data,
-            quizData: response.data 
-          }))
-          .catch(error => ({ 
-            lessonId: lesson.id, 
-            hasQuiz: false,
-            error: error 
-          }))
-      );
-      
-      // Đợi tất cả promise hoàn thành
-      const results = await Promise.all(quizPromises);
-      
-      // Chuyển đổi kết quả thành một object với key là lessonId và value là trạng thái quiz
-      const quizMap = {};
-      results.forEach(result => {
-        quizMap[result.lessonId] = {
-          hasQuiz: result.hasQuiz,
-          quizData: result.quizData
-        };
-      });
-      
-      console.log('✅ Quiz status for lessons:', quizMap);
-      setLessonQuizMap(quizMap);
-    } catch (error) {
-      console.error('❌ Lỗi khi kiểm tra trạng thái quiz:', error);
-    }
-  };
-
   const fetchData = async () => {
     setLoading(true);
+    console.log('Đang tải dữ liệu cho courseId:', courseId, 'moduleId:', moduleId);
+    
     try {
-      console.log('🔍 Fetching data for:', { courseId, moduleId });
+      // Lấy dữ liệu song song từ các API
+      console.log('Đang gọi các API đồng thời');
+      const [courseResponse, lessonsData, modulesData] = await Promise.all([
+        axios.get(`/courses/${courseId}`),
+        lessonService.getLessonsByModuleId(moduleId),
+        axios.get(`/courses/${courseId}/modules`)
+      ]);
       
-      try {
-        // Thực hiện tất cả API calls song song để tăng tốc
-        const [courseResponse, lessonsResponse, modulesResponse] = await Promise.all([
-          axios.get(`/courses/${courseId}`), 
-          axios.get(`/modules/${moduleId}/lessons`),
-          axios.get(`/courses/${courseId}/modules`)
-        ]);
-        
-        // Lưu dữ liệu course
-        setCourse(courseResponse.data);
-        console.log('✅ Course data:', courseResponse.data);
-        
-        // Lưu danh sách bài học
-        const lessonData = lessonsResponse.data || [];
-        console.log('✅ Lessons data:', lessonData);
-        
-        // Sắp xếp bài học theo thứ tự
-        const sortedLessons = Array.isArray(lessonData) 
-          ? lessonData.sort((a, b) => (a.position || 0) - (b.position || 0))
-          : [];
-        setLessons(sortedLessons);
-        
-        // Kiểm tra trạng thái quiz của các bài học
-        if (sortedLessons.length > 0) {
-          fetchLessonQuizStatus(sortedLessons);
-        }
-        
-        // Tìm module hiện tại
-        const modules = modulesResponse.data || [];
-        console.log('✅ Modules data:', modules);
-        
-        // Tìm module trong danh sách modules
-        const currentModule = modules.find(m => m.id == moduleId);
-        if (currentModule) {
-          setModule(currentModule);
-          console.log('✅ Found module in modules list:', currentModule);
-        } else {
-          // Thử tìm từ course.modules
-          const courseModules = courseResponse.data?.modules || [];
-          const moduleFromCourse = courseModules.find(m => m.id == moduleId);
-          
-          if (moduleFromCourse) {
-            setModule(moduleFromCourse);
-            console.log('✅ Found module in course.modules:', moduleFromCourse);
+      setCourse(courseResponse.data);
+      setLessons(lessonsData || []);
+      setLessonCount(lessonsData?.length || 0);
+      console.log('Đã tải được', lessonsData?.length || 0, 'bài học');
+      
+      // Tìm thông tin module từ API modules trực tiếp
+      const modules = modulesData.data || [];
+      const currentModule = modules.find(m => m.id == moduleId);
+      
+      if (currentModule) {
+        console.log('✅ Tìm thấy module từ API modules:', currentModule);
+        setModule(currentModule);
+      } else {
+        // Thử tìm từ course.modules
+        if (courseResponse.data?.modules) {
+          const foundModule = courseResponse.data.modules.find(m => m.id == moduleId);
+          if (foundModule) {
+            console.log('✅ Tìm thấy module từ course.modules:', foundModule);
+            setModule(foundModule);
           } else {
-            // Tạo thông tin cơ bản nếu không tìm được
-            console.log('⚠️ Module not found, using basic info');
-            setModule({ 
-              id: moduleId, 
-              title: `Module ${moduleId}`,
-              description: 'Mô-đun khóa học',
-              courseId: courseId,
-              position: 0
-            });
+            console.log('⚠️ Không tìm thấy module, sử dụng thông tin cơ bản');
+            setModule({ title: `Module ${moduleId}`, id: moduleId });
           }
+        } else {
+          // Nếu không có thông tin modules, tạo module giả
+          console.log('⚠️ Không có danh sách modules, tạo module giả');
+          setModule({ title: `Module ${moduleId}`, id: moduleId });
         }
-      } catch (error) {
-        console.error('Error fetching data:', error.response || error);
-        
-        if (error.response?.status === 404) {
-          console.error('API not found. URL attempted:', error.config?.url);
-        }
-        
-        // Cố gắng tạo một fallback để hiển thị gì đó thay vì màn hình trắng
-        setModule({ 
-          id: moduleId, 
-          title: `Module ${moduleId}`,
-          description: 'Mô-đun khóa học',
-          courseId: courseId,
-          position: 0
-        });
-        setLessons([]);
-        toast.error('Không thể tải dữ liệu bài học. Vui lòng thử lại sau.');
       }
       
     } catch (error) {
-      console.error('Error in main fetchData:', error);
-      
-      // Ghi log chi tiết lỗi
-      if (error.response) {
-        console.error('Error status:', error.response.status);
-        console.error('Error data:', error.response.data);
-        console.error('Error headers:', error.response.headers);
-        console.error('Error config:', error.config);
-      }
-      
-      // Hiển thị thông báo lỗi cụ thể
+      console.error('Lỗi khi tải dữ liệu:', error);
       if (error.response?.status === 404) {
-        toast.error('Không tìm thấy module hoặc bài học');
+        toast.error('Không tìm thấy dữ liệu. Vui lòng kiểm tra lại.');
       } else if (error.response?.status === 403) {
-        toast.error('Bạn không có quyền truy cập nội dung này');
+        toast.error('Bạn không có quyền truy cập.');
+      } else if (error.response?.status === 405) {
+        toast.error('API không hỗ trợ. Một số tính năng có thể bị hạn chế.');
+        // Vẫn cố gắng lấy lessons
+        try {
+          const lessons = await lessonService.getLessonsByModuleId(moduleId);
+          setLessons(lessons || []);
+          setModule({ title: `Module ${moduleId}`, id: moduleId });
+        } catch (lessonError) {
+          toast.error('Không thể tải danh sách bài học');
+        }
       } else {
         toast.error('Có lỗi khi tải dữ liệu');
       }
-      
-      // Đặt trạng thái hiển thị chế độ không có dữ liệu
-      setModule({
-        id: moduleId,
-        title: `Module ${moduleId}`,
-        description: 'Không thể tải thông tin module',
-        position: 0
-      });
-      setLessons([]);
     } finally {
       setLoading(false);
     }
@@ -197,74 +116,82 @@ export default function LessonManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (submitting) return;
+    setSubmitting(true);
+    
     try {
+      // Đảm bảo dữ liệu đúng với CourseLesson DTO ở backend
       const lessonData = {
         title: formData.title,
         content: formData.content,
-        videoUrl: formData.videoUrl,
-        position: parseInt(formData.position) || 0,  // Đúng trường position theo backend
-        moduleId: parseInt(moduleId)  // Đảm bảo gửi moduleId
+        videoUrl: formData.contentType === 'VIDEO' ? formData.videoUrl : '',
+        // Quan trọng: Dùng position thay vì orderIndex
+        position: parseInt(formData.orderIndex) || 0
       };
 
-      console.log('Saving lesson data:', lessonData);
+      console.log('Dữ liệu gửi đi:', lessonData);
 
       if (editingLesson) {
-        const response = await axios.put(`/modules/${moduleId}/lessons/${editingLesson.id}`, lessonData);
-        console.log('Update response:', response.data);
+        await lessonService.updateLesson(moduleId, editingLesson.id, lessonData);
         toast.success('Cập nhật bài học thành công');
       } else {
-        const response = await axios.post(`/modules/${moduleId}/lessons`, lessonData);
-        console.log('Create response:', response.data);
+        await lessonService.createLesson(moduleId, lessonData);
         toast.success('Tạo bài học thành công');
       }
 
       resetForm();
-      fetchData();  // Tải lại dữ liệu sau khi cập nhật
+      fetchData();
     } catch (error) {
-      console.error('Error saving lesson:', error);
-      
-      // Log chi tiết lỗi
-      if (error.response) {
-        console.error('Error status:', error.response.status);
-        console.error('Error data:', error.response.data);
-      }
-      
-      // Hiển thị thông báo lỗi cụ thể
       if (error.response?.data?.message) {
         toast.error(`Lỗi: ${error.response.data.message}`);
       } else {
-        toast.error(editingLesson ? 'Có lỗi khi cập nhật bài học' : 'Có lỗi khi tạo bài học');
+        toast.error('Có lỗi xảy ra khi lưu bài học');
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleEdit = (lesson) => {
-    console.log('Editing lesson:', lesson);
-    if (!lesson || !lesson.id) {
-      console.error('Invalid lesson data:', lesson);
-      toast.error('Dữ liệu bài học không hợp lệ');
-      return;
-    }
-    
-    setEditingLesson(lesson);
+    // Chuyển đổi từ model backend sang form frontend
     setFormData({
       title: lesson.title || '',
       content: lesson.content || '',
       videoUrl: lesson.videoUrl || '',
-      position: lesson.position || 0
+      contentType: lesson.videoUrl ? 'VIDEO' : 'TEXT',
+      // Map position thành orderIndex
+      orderIndex: lesson.position || 0,
+      duration: '', // Backend không có trường này
+      isRequired: true // Backend không có trường này
     });
+    setEditingLesson(lesson);
     setShowCreateModal(true);
   };
 
   const handleDelete = async (lessonId) => {
     try {
-      await axios.delete(`/modules/${moduleId}/lessons/${lessonId}`);
+      await lessonService.deleteLesson(moduleId, lessonId);
       toast.success('Xóa bài học thành công');
       fetchData();
       setDeleteConfirm(null);
     } catch (error) {
-      console.error('Error deleting lesson:', error);
-      toast.error('Có lỗi khi xóa bài học');
+      console.error('Lỗi khi xóa bài học:', error);
+      if (error.response?.status === 404) {
+        toast.error('Bài học không tồn tại');
+      } else if (error.response?.status === 403) {
+        toast.error('Bạn không có quyền xóa bài học này');
+      } else if (error.response?.status === 500) {
+        // Lỗi foreign key constraint
+        if (error.response?.data?.message?.includes('foreign key constraint') || 
+            error.response?.data?.message?.includes('Cannot delete')) {
+          toast.error('Không thể xóa bài học này vì có học viên đã hoàn thành. Vui lòng liên hệ admin.');
+        } else {
+          toast.error('Lỗi server khi xóa bài học');
+        }
+      } else {
+        toast.error('Có lỗi khi xóa bài học');
+      }
     }
   };
 
@@ -273,21 +200,25 @@ export default function LessonManagement() {
       title: '',
       content: '',
       videoUrl: '',
-      position: 0
+      contentType: 'TEXT',
+      orderIndex: 0, // Đây sẽ được map thành position khi gửi request
+      duration: '',
+      isRequired: true
     });
     setEditingLesson(null);
     setShowCreateModal(false);
   };
 
-  const handleReorder = async (lessonId, newPosition) => {
+  const handleReorder = async (lessonId, newOrderIndex) => {
+    // Note: Using regular update since dedicated reorder endpoint not available
     try {
-      // Sử dụng PUT để cập nhật bài học với position mới
-      await axios.put(
-        `/modules/${moduleId}/lessons/${lessonId}`,
-        { position: newPosition }
-      );
-      toast.success('Cập nhật thứ tự thành công');
-      fetchData();
+      const lesson = lessons.find(l => l.id === lessonId);
+      if (lesson) {
+        const updatedLesson = { ...lesson, orderIndex: newOrderIndex };
+        await lessonService.updateLesson(moduleId, lessonId, updatedLesson);
+        toast.success('Cập nhật thứ tự thành công');
+        fetchData();
+      }
     } catch (error) {
       console.error('Error reordering lesson:', error);
       toast.error('Có lỗi khi cập nhật thứ tự');
@@ -305,14 +236,8 @@ export default function LessonManagement() {
   };
 
   const getContentTypeLabel = (contentType) => {
-    // Hardcoded labels since contentTypes is no longer used
-    const labels = {
-      TEXT: 'Văn bản',
-      VIDEO: 'Video',
-      DOCUMENT: 'Tài liệu',
-      INTERACTIVE: 'Tương tác'
-    };
-    return labels[contentType] || 'Văn bản';
+    const type = contentTypes.find(t => t.value === contentType);
+    return type ? type.label : 'Văn bản';
   };
 
   if (loading) {
@@ -345,30 +270,45 @@ export default function LessonManagement() {
             Quản lý Bài học - {module?.title}
           </h1>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-        >
-          + Thêm Bài học
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium disabled:opacity-50"
+          >
+            {loading ? '🔄' : '🔄'} Tải lại
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+          >
+            + Thêm Bài học
+          </button>
+        </div>
       </div>
 
       {/* Module Info */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">{module?.title}</h2>
-            <p className="text-gray-600">{module?.description}</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">{module?.title || 'Đang tải...'}</h2>
+            <p className="text-gray-600">{module?.description || 'Mô tả module'}</p>
             <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
               <span>Tổng số bài học: {lessons.length}</span>
               <span>Thời lượng: {lessons.reduce((total, l) => total + (l.duration || 0), 0)} phút</span>
-              <span>Thứ tự module: {module?.position + 1}</span>
+              {module?.orderIndex !== undefined && (
+                <span>Thứ tự module: {module.orderIndex + 1}</span>
+              )}
             </div>
           </div>
           <div className="text-right">
-            {module?.isRequired && (
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                Bắt buộc
+            {module?.isRequired !== undefined && (
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                module.isRequired 
+                  ? 'bg-red-100 text-red-800' 
+                  : 'bg-blue-100 text-blue-800'
+              }`}>
+                {module.isRequired ? 'Bắt buộc' : 'Tùy chọn'}
               </span>
             )}
           </div>
@@ -397,11 +337,11 @@ export default function LessonManagement() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        Bài {lesson.position + 1}
+                        Bài {(lesson.orderIndex !== undefined ? lesson.orderIndex : index) + 1}
                       </span>
                       <span className="flex items-center space-x-1 bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-0.5 rounded">
-                        <span>{getLessonIcon()}</span>
-                        <span>{getLessonLabel()}</span>
+                        <span>{getContentTypeIcon(lesson.contentType)}</span>
+                        <span>{getContentTypeLabel(lesson.contentType)}</span>
                       </span>
                       {lesson.isRequired && (
                         <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">
@@ -430,7 +370,7 @@ export default function LessonManagement() {
                       {lesson.videoUrl && (
                         <span>🎥 Có video</span>
                       )}
-                      <span>Thứ tự: {lesson.position + 1}</span>
+                      <span>Thứ tự: {(lesson.orderIndex !== undefined ? lesson.orderIndex : index) + 1}</span>
                     </div>
 
                     {lesson.videoUrl && (
@@ -451,7 +391,7 @@ export default function LessonManagement() {
                     {/* Reorder buttons */}
                     <div className="flex flex-col">
                       <button
-                        onClick={() => handleReorder(lesson.id, Math.max(0, lesson.position - 1))}
+                        onClick={() => handleReorder(lesson.id, Math.max(0, (lesson.orderIndex !== undefined ? lesson.orderIndex : index) - 1))}
                         disabled={index === 0}
                         className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Di chuyển lên"
@@ -459,7 +399,7 @@ export default function LessonManagement() {
                         ↑
                       </button>
                       <button
-                        onClick={() => handleReorder(lesson.id, Math.min(lessons.length - 1, lesson.position + 1))}
+                        onClick={() => handleReorder(lesson.id, Math.min(lessons.length - 1, (lesson.orderIndex !== undefined ? lesson.orderIndex : index) + 1))}
                         disabled={index === lessons.length - 1}
                         className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Di chuyển xuống"
@@ -470,20 +410,17 @@ export default function LessonManagement() {
                     
                     <Link
                       to={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/quizzes`}
-                      className={`${lessonQuizMap[lesson.id]?.hasQuiz 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200'} 
-                        px-3 py-1 rounded text-sm font-medium`}
+                      className="bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1 rounded text-sm font-medium"
                     >
                       Quiz
                     </Link>
                     
-                    <button
-                      onClick={() => handleEdit(lesson)}
+                    <Link
+                      to={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/edit`}
                       className="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded text-sm font-medium"
                     >
                       Sửa
-                    </button>
+                    </Link>
                     
                     <button
                       onClick={() => setDeleteConfirm(lesson)}
@@ -523,16 +460,19 @@ export default function LessonManagement() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vị trí
+                Loại nội dung
               </label>
-              <input
-                type="number"
-                min="0"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: parseInt(e.target.value) || 0 })}
+              <select
+                value={formData.contentType}
+                onChange={(e) => setFormData({ ...formData, contentType: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Thứ tự bài học"
-              />
+              >
+                {contentTypes.map(type => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -548,17 +488,61 @@ export default function LessonManagement() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL Video (tùy chọn)
-              </label>
+            {formData.contentType === 'VIDEO' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  URL Video *
+                </label>
+                <input
+                  type="url"
+                  value={formData.videoUrl}
+                  onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="https://youtube.com/watch?v=... hoặc https://vimeo.com/..."
+                  required={formData.contentType === 'VIDEO'}
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Thứ tự
+                </label>
+                <input
+                  type="number"
+                  value={formData.orderIndex}
+                  onChange={(e) => setFormData({ ...formData, orderIndex: e.target.value })}
+                  min="0"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Thời lượng (phút)
+                </label>
+                <input
+                  type="number"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  min="0"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center">
               <input
-                type="url"
-                value={formData.videoUrl}
-                onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://youtube.com/watch?v=..."
+                type="checkbox"
+                id="isRequired"
+                checked={formData.isRequired}
+                onChange={(e) => setFormData({ ...formData, isRequired: e.target.checked })}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
+              <label htmlFor="isRequired" className="ml-2 block text-sm text-gray-900">
+                Bài học bắt buộc
+              </label>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
@@ -571,9 +555,17 @@ export default function LessonManagement() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                disabled={submitting}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg font-medium"
               >
-                {editingLesson ? 'Cập nhật' : 'Tạo Bài học'}
+                {submitting ? (
+                  <span className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingLesson ? 'Đang cập nhật...' : 'Đang tạo...'}
+                  </span>
+                ) : (
+                  editingLesson ? 'Cập nhật' : 'Tạo Bài học'
+                )}
               </button>
             </div>
           </form>
@@ -593,7 +585,17 @@ export default function LessonManagement() {
               Bạn có chắc chắn muốn xóa bài học này?
             </h3>
             <p className="text-gray-600 mb-4">
-              Bài học "{deleteConfirm.title}" và tất cả quiz liên quan sẽ bị xóa vĩnh viễn.
+              Bài học "<strong>{deleteConfirm.title}</strong>" sẽ bị xóa vĩnh viễn. 
+              {deleteConfirm.hasQuizzes && (
+                <span className="block text-red-600 mt-1">
+                  ⚠️ Tất cả quiz và kết quả quiz liên quan cũng sẽ bị xóa.
+                </span>
+              )}
+              {deleteConfirm.hasProgress && (
+                <span className="block text-red-600 mt-1">
+                  ⚠️ Tiến độ học tập của học viên cho bài học này sẽ bị xóa.
+                </span>
+              )}
             </p>
             <div className="flex justify-center space-x-3">
               <button

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import axios from '../../utils/axios';
 import { toast } from 'react-toastify';
 import { communicationApi } from '../../services/communicationApi';
+import { getEnrolledUsersCount } from '../../services/enrollmentService';
+import { countLessons } from '../../services/courseService';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -29,469 +31,534 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // Tạm thời sử dụng mock data thay vì gọi các API không tồn tại
-      const mockStats = {
-        totalCourses: 25,
-        publishedCourses: 18,
-        totalModules: 67,
-        totalLessons: 234,
-        totalQuizzes: 89,
-        totalStudents: 156,
-        totalCertificates: 78,
-        totalCommunicationPrograms: 12,
-        activeCommunicationPrograms: 8,
-        totalCommunicationParticipants: 145,
+      // Kết hợp dữ liệu từ cả hai nhánh
+      // Fetch các dữ liệu từ API thực tế nếu có
+      const communicationStats = await fetchCommunicationStats();
+      const courseStats = await fetchCourseStats();
+      
+      setStats({
+        ...stats,
+        ...communicationStats,
+        ...courseStats,
         recentActivities: [
           {
             id: 1,
-            type: 'course_created',
-            description: 'Khóa học mới được tạo: "An toàn lao động"',
-            timestamp: new Date().toISOString(),
-            user: 'Admin'
+            type: 'enrollment',
+            userName: 'Nguyễn Văn A',
+            courseName: 'Phòng chống tác hại của ma túy',
+            date: '2025-07-10T15:30:00'
           },
           {
             id: 2,
-            type: 'student_enrolled',
-            description: 'Học viên mới đăng ký khóa học',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            user: 'Nguyễn Văn A'
+            type: 'completion',
+            userName: 'Trần Thị B',
+            courseName: 'Nhận biết các loại ma túy phổ biến',
+            date: '2025-07-09T11:20:00'
+          },
+          {
+            id: 3,
+            type: 'certificate',
+            userName: 'Lê Văn C',
+            courseName: 'Kỹ năng từ chối ma túy',
+            date: '2025-07-08T14:45:00'
+          },
+          {
+            id: 4,
+            type: 'enrollment',
+            userName: 'Phạm Thị D',
+            courseName: 'Tác động của ma túy đối với sức khỏe',
+            date: '2025-07-07T09:15:00'
+          },
+          {
+            id: 5,
+            type: 'feedback',
+            userName: 'Võ Văn E',
+            courseName: 'Phòng chống tác hại của ma túy',
+            date: '2025-07-06T16:30:00'
           }
         ]
-      };
-
-      // Chỉ gọi API communication programs nếu đã có backend
-      try {
-        const overviewResponse = await communicationApi.getOverview();
-        mockStats.totalCommunicationPrograms = overviewResponse.totalPrograms || mockStats.totalCommunicationPrograms;
-        mockStats.activeCommunicationPrograms = overviewResponse.activePrograms || mockStats.activeCommunicationPrograms;
-        mockStats.totalCommunicationParticipants = overviewResponse.totalParticipants || mockStats.totalCommunicationParticipants;
-      } catch (error) {
-        console.warn('Could not fetch communication programs overview, using mock data:', error);
-      }
-
-      setStats(mockStats);
-
-      // Mock data cho recent courses
+      });
+      
+      // Thiết lập dữ liệu khóa học
       setRecentCourses([
         {
           id: 1,
-          name: 'An toàn lao động cơ bản',
-          status: 'PUBLISHED',
-          enrollmentCount: 45,
-          createdAt: new Date().toISOString()
+          title: 'Phòng chống tác hại của ma túy',
+          enrollments: 45,
+          dateCreated: '2025-06-15T10:00:00',
+          image: 'https://placehold.co/200x120'
         },
         {
           id: 2,
-          name: 'Kỹ năng giao tiếp',
-          status: 'DRAFT',
-          enrollmentCount: 23,
-          createdAt: new Date(Date.now() - 86400000).toISOString()
+          title: 'Nhận biết các loại ma túy phổ biến',
+          enrollments: 32,
+          dateCreated: '2025-06-20T09:30:00',
+          image: 'https://placehold.co/200x120'
+        },
+        {
+          id: 3,
+          title: 'Kỹ năng từ chối ma túy',
+          enrollments: 28,
+          dateCreated: '2025-06-25T14:00:00',
+          image: 'https://placehold.co/200x120'
         }
       ]);
-
-      // Mock data cho top courses
+      
       setTopCourses([
         {
           id: 1,
-          name: 'An toàn lao động cơ bản',
-          enrollmentCount: 45
+          title: 'Phòng chống tác hại của ma túy',
+          enrollments: 45,
+          completionRate: 80,
+          rating: 4.7
         },
         {
           id: 2,
-          name: 'Kỹ năng giao tiếp',
-          enrollmentCount: 23
+          title: 'Nhận biết các loại ma túy phổ biến',
+          enrollments: 32,
+          completionRate: 75,
+          rating: 4.5
+        },
+        {
+          id: 3,
+          title: 'Kỹ năng từ chối ma túy',
+          enrollments: 28,
+          completionRate: 85,
+          rating: 4.9
+        },
+        {
+          id: 4,
+          title: 'Tác động của ma túy đối với sức khỏe',
+          enrollments: 22,
+          completionRate: 70,
+          rating: 4.3
+        },
+        {
+          id: 5,
+          title: 'Quy định pháp luật về ma túy',
+          enrollments: 18,
+          completionRate: 65,
+          rating: 4.2
         }
       ]);
-
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast.error('Có lỗi khi tải dữ liệu dashboard');
+      toast.error('Không thể tải dữ liệu bảng điều khiển');
     } finally {
       setLoading(false);
     }
   };
 
-  const getActivityIcon = (type) => {
-    const icons = {
-      course_created: '📚',
-      course_published: '✅',
-      student_enrolled: '👥',
-      certificate_issued: '🎓',
-      quiz_completed: '📝',
-      module_added: '📋',
-      lesson_added: '📖'
-    };
-    return icons[type] || '📄';
-  };
-
-  const getActivityColor = (type) => {
-    const colors = {
-      course_created: 'bg-blue-100 text-blue-800',
-      course_published: 'bg-green-100 text-green-800',
-      student_enrolled: 'bg-purple-100 text-purple-800',
-      certificate_issued: 'bg-yellow-100 text-yellow-800',
-      quiz_completed: 'bg-indigo-100 text-indigo-800',
-      module_added: 'bg-cyan-100 text-cyan-800',
-      lesson_added: 'bg-pink-100 text-pink-800'
-    };
-    return colors[type] || 'bg-gray-100 text-gray-800';
-  };
-
-  // Lấy danh sách khóa học mới nhất và đếm số học viên cho từng khóa học
-  const fetchRecentCoursesWithEnrollments = async () => {
-    setLoading(true);
+  // Hàm để lấy dữ liệu từ API Communication
+  const fetchCommunicationStats = async () => {
     try {
-      const res = await axios.get('/courses?limit=5&sortBy=createdAt&sortOrder=desc');
-      const courses = res.data.content || res.data || [];
-      // Lấy enrollments cho từng courseId
-      const coursesWithEnrollments = await Promise.all(
-        courses.map(async (course) => {
-          try {
-            const enrollmentsRes = await axios.get(`/enrollments?courseId=${course.id}`);
-            const enrollmentCount = Array.isArray(enrollmentsRes.data) ? enrollmentsRes.data.length : 0;
-            return { ...course, enrollmentCount };
-          } catch {
-            return { ...course, enrollmentCount: 0 };
-          }
-        })
+      // Sử dụng communicationApi nếu có
+      const programsList = await communicationApi.getPrograms();
+      const activePrograms = programsList.filter(program => 
+        program.status && program.status.toUpperCase() === 'ACTIVE'
       );
-      setRecentCourses(coursesWithEnrollments);
+      
+      // Tính tổng số người tham gia
+      let totalParticipants = 0;
+      programsList.forEach(program => {
+        if (program.participantCount) {
+          totalParticipants += program.participantCount;
+        }
+      });
+      
+      return {
+        totalCommunicationPrograms: programsList.length || 0,
+        activeCommunicationPrograms: activePrograms.length || 0,
+        totalCommunicationParticipants: totalParticipants
+      };
     } catch (error) {
-      setRecentCourses([]);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching communication stats:', error);
+      // Trả về giá trị mặc định nếu có lỗi
+      return {
+        totalCommunicationPrograms: 0,
+        activeCommunicationPrograms: 0,
+        totalCommunicationParticipants: 0
+      };
+    }
+  };
+
+  // Hàm để lấy dữ liệu từ API Course
+  const fetchCourseStats = async () => {
+    try {
+      const [coursesResponse, enrolledCountResponse, lessonCountResponse] = await Promise.allSettled([
+        axios.get('/courses'),
+        getEnrolledUsersCount(),
+        countLessons()
+      ]);
+      
+      const courses = coursesResponse.status === 'fulfilled' ? coursesResponse.value.data : [];
+      const totalStudents = enrolledCountResponse.status === 'fulfilled' ? enrolledCountResponse.value : 0;
+      const lessonCount = lessonCountResponse.status === 'fulfilled' ? lessonCountResponse.value : 0;
+      
+      // Đếm số khóa học đã xuất bản
+      const published = courses.filter(course => course.status === 'PUBLISHED').length;
+      
+      // Đếm số module (giả định)
+      const moduleCount = Math.round(courses.length * 2.5);
+      
+      // Đếm số quiz (giả định)
+      const quizCount = Math.round(lessonCount * 0.4);
+      
+      // Đếm số chứng chỉ (giả định)
+      const certificateCount = Math.round(totalStudents * 0.5);
+      
+      return {
+        totalCourses: courses.length,
+        publishedCourses: published,
+        totalModules: moduleCount,
+        totalLessons: lessonCount,
+        totalQuizzes: quizCount,
+        totalStudents: totalStudents,
+        totalCertificates: certificateCount
+      };
+    } catch (error) {
+      console.error('Error fetching course stats:', error);
+      // Trả về giá trị mặc định nếu có lỗi
+      return {
+        totalCourses: 0,
+        publishedCourses: 0,
+        totalModules: 0,
+        totalLessons: 0,
+        totalQuizzes: 0,
+        totalStudents: 0,
+        totalCertificates: 0
+      };
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'enrollment':
+        return (
+          <div className="p-2 bg-blue-100 rounded-full">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+          </div>
+        );
+      case 'completion':
+        return (
+          <div className="p-2 bg-green-100 rounded-full">
+            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+        );
+      case 'certificate':
+        return (
+          <div className="p-2 bg-purple-100 rounded-full">
+            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+            </svg>
+          </div>
+        );
+      case 'feedback':
+        return (
+          <div className="p-2 bg-yellow-100 rounded-full">
+            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+            </svg>
+          </div>
+        );
+      default:
+        return (
+          <div className="p-2 bg-gray-100 rounded-full">
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        );
+    }
+  };
+
+  const getActivityText = (activity) => {
+    switch (activity.type) {
+      case 'enrollment':
+        return (
+          <span>
+            <span className="font-medium">{activity.userName}</span> đã đăng ký khóa học <span className="font-medium">{activity.courseName}</span>
+          </span>
+        );
+      case 'completion':
+        return (
+          <span>
+            <span className="font-medium">{activity.userName}</span> đã hoàn thành khóa học <span className="font-medium">{activity.courseName}</span>
+          </span>
+        );
+      case 'certificate':
+        return (
+          <span>
+            <span className="font-medium">{activity.userName}</span> đã nhận chứng chỉ cho khóa học <span className="font-medium">{activity.courseName}</span>
+          </span>
+        );
+      case 'feedback':
+        return (
+          <span>
+            <span className="font-medium">{activity.userName}</span> đã đánh giá khóa học <span className="font-medium">{activity.courseName}</span>
+          </span>
+        );
+      default:
+        return <span>{activity.userName} đã thực hiện một hành động</span>;
+    }
+  };
+
+  const getActivityLink = (activity) => {
+    switch (activity.type) {
+      case 'enrollment':
+        return `/admin/courses/${activity.courseId}/students`;
+      case 'completion':
+        return `/admin/courses/${activity.courseId}/students`;
+      case 'certificate':
+        return `/admin/courses/${activity.courseId}/certificates`;
+      case 'feedback':
+        return `/admin/courses/${activity.courseId}`;
+      default:
+        return '#';
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex justify-center items-center p-4">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Quản trị</h1>
-        <p className="text-gray-600">Tổng quan hệ thống quản lý khóa học</p>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-              📚
-            </div>
-            <div className="ml-4">
-              <h3 className="text-2xl font-bold text-gray-900">{stats.totalCourses}</h3>
-              <p className="text-gray-600">Tổng khóa học</p>
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center text-sm">
-              <span className="text-green-600">✓ {stats.publishedCourses} đã xuất bản</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-purple-100 text-purple-600">
-              👥
-            </div>
-            <div className="ml-4">
-              <h3 className="text-2xl font-bold text-gray-900">{stats.totalStudents}</h3>
-              <p className="text-gray-600">Tổng học viên</p>
-            </div>
-          </div>
-          <div className="mt-4">
-            <Link to="/admin/courses" className="text-sm text-purple-600 hover:text-purple-800">
-              Xem chi tiết →
-            </Link>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100 text-green-600">
-              📖
-            </div>
-            <div className="ml-4">
-              <h3 className="text-2xl font-bold text-gray-900">{stats.totalLessons}</h3>
-              <p className="text-gray-600">Tổng bài học</p>
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center text-sm text-gray-600">
-              <span>{stats.totalModules} module • {stats.totalQuizzes} quiz</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              🎓
-            </div>
-            <div className="ml-4">
-              <h3 className="text-2xl font-bold text-gray-900">{stats.totalCertificates}</h3>
-              <p className="text-gray-600">Chứng chỉ đã cấp</p>
-            </div>
-          </div>
-          <div className="mt-4">
-            <Link to="/admin/courses" className="text-sm text-yellow-600 hover:text-yellow-800">
-              Quản lý chứng chỉ →
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Communication Programs Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-orange-100 text-orange-600">
-              📢
-            </div>
-            <div className="ml-4">
-              <h3 className="text-2xl font-bold text-gray-900">{stats.totalCommunicationPrograms}</h3>
-              <p className="text-gray-600">Chương trình truyền thông</p>
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="flex items-center text-sm">
-              <span className="text-green-600">✓ {stats.activeCommunicationPrograms} đang hoạt động</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-cyan-100 text-cyan-600">
-              🤝
-            </div>
-            <div className="ml-4">
-              <h3 className="text-2xl font-bold text-gray-900">{stats.totalCommunicationParticipants}</h3>
-              <p className="text-gray-600">Người tham gia</p>
-            </div>
-          </div>
-          <div className="mt-4">
-            <Link to="/admin/communication/programs" className="text-sm text-cyan-600 hover:text-cyan-800">
-              Xem chi tiết →
-            </Link>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-center">
-            <Link 
-              to="/admin/communication/programs" 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Quản lý chương trình truyền thông
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Courses */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Khóa học mới nhất</h2>
-                <Link 
-                  to="/admin/courses" 
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                  Xem tất cả →
-                </Link>
+    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Bảng điều khiển Quản trị</h1>
+        
+        {/* Thống kê tổng quan */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-blue-100 mr-4">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-500">Khóa học</div>
+                <div className="text-xl font-semibold">{stats.totalCourses}</div>
+                <div className="text-sm text-green-600">{stats.publishedCourses} đã xuất bản</div>
               </div>
             </div>
-            <div className="p-6">
-              {recentCourses.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-2">📚</div>
-                  <p>Chưa có khóa học nào</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentCourses.map((course) => (
-                    <div key={course.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{course.title}</h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {course.description ? (
-                            course.description.length > 100 
-                              ? course.description.substring(0, 100) + '...'
-                              : course.description
-                          ) : 'Không có mô tả'}
-                        </p>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                          <span>
-                            {course.createdAt 
-                              ? new Date(course.createdAt).toLocaleDateString('vi-VN')
-                              : 'N/A'
-                            }
-                          </span>
-                          <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                            {course.enrollmentCount} học viên
-                          </span>
-                        </div>
-                      </div>
-                      <div className="ml-4 flex space-x-2">
-                        <Link
-                          to={`/admin/courses/${course.id}`}
-                          className="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded text-sm font-medium"
-                        >
-                          Chi tiết
-                        </Link>
-                        <Link
-                          to={`/admin/courses/${course.id}/edit`}
-                          className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 rounded text-sm font-medium"
-                        >
-                          Sửa
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-green-100 mr-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-500">Học viên</div>
+                <div className="text-xl font-semibold">{stats.totalStudents}</div>
+                <div className="text-sm text-green-600">{stats.totalCertificates} chứng chỉ</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-purple-100 mr-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-500">Bài học</div>
+                <div className="text-xl font-semibold">{stats.totalLessons}</div>
+                <div className="text-sm text-green-600">{stats.totalModules} module</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-yellow-100 mr-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-500">Trắc nghiệm</div>
+                <div className="text-xl font-semibold">{stats.totalQuizzes}</div>
+                <div className="text-sm text-green-600">Trung bình {Math.round(stats.totalQuizzes / (stats.totalModules || 1))} / module</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-indigo-100 mr-4">
+                <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-500">Chương trình truyền thông</div>
+                <div className="text-xl font-semibold">{stats.totalCommunicationPrograms}</div>
+                <div className="text-sm text-green-600">{stats.activeCommunicationPrograms} đang hoạt động</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-pink-100 mr-4">
+                <svg className="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-500">Người tham gia truyền thông</div>
+                <div className="text-xl font-semibold">{stats.totalCommunicationParticipants}</div>
+                <div className="text-sm text-green-600">Trung bình {Math.round(stats.totalCommunicationParticipants / (stats.totalCommunicationPrograms || 1))} / chương trình</div>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Recent Activities */}
-        <div>
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Hoạt động gần đây</h2>
-            </div>
-            <div className="p-6">
-              {stats.recentActivities.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-2">📊</div>
-                  <p>Chưa có hoạt động nào</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
+        
+        {/* Khung chính */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Hoạt động gần đây */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="font-semibold text-lg text-gray-800">Hoạt động gần đây</h2>
+              </div>
+              <div className="p-6">
+                <ul className="space-y-4">
                   {stats.recentActivities.map((activity, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${getActivityColor(activity.type)}`}>
-                        {getActivityIcon(activity.type)}
-                      </div>
+                    <li key={activity.id || index} className="flex items-start gap-4">
+                      {getActivityIcon(activity.type)}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900">
-                          {activity.description}
+                        <p className="text-sm text-gray-600">
+                          {getActivityText(activity)}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {activity.timestamp 
-                            ? new Date(activity.timestamp).toLocaleString('vi-VN')
-                            : 'N/A'
-                          }
+                          {formatDate(activity.date)}
                         </p>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Top Courses */}
-          <div className="bg-white rounded-lg shadow-md mt-6">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Khóa học phổ biến</h2>
-            </div>
-            <div className="p-6">
-              {topCourses.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-2">🏆</div>
-                  <p>Chưa có dữ liệu</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {topCourses.map((course, index) => (
-                    <div key={course.id} className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        index === 0 ? 'bg-yellow-100 text-yellow-800' : 
-                        index === 1 ? 'bg-gray-100 text-gray-800' :
-                        index === 2 ? 'bg-orange-100 text-orange-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-900">
-                          {course.title}
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          {course.enrollmentCount || 0} học viên
-                        </p>
-                      </div>
-                      <Link
-                        to={`/admin/courses/${course.id}`}
-                        className="text-blue-600 hover:text-blue-800 text-xs"
+                      <Link 
+                        to={getActivityLink(activity)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
-                        Xem →
+                        Xem
                       </Link>
-                    </div>
+                    </li>
                   ))}
-                </div>
-              )}
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mt-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Thao tác nhanh</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link
-              to="/admin/courses/create"
-              className="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
-            >
-              <div className="p-2 bg-blue-500 text-white rounded">
-                ➕
+          
+          <div className="lg:col-span-2">
+            {/* Khóa học mới thêm gần đây */}
+            <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="font-semibold text-lg text-gray-800">Khóa học mới thêm gần đây</h2>
+                <Link to="/admin/courses" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                  Xem tất cả
+                </Link>
               </div>
-              <div className="ml-3">
-                <h3 className="font-medium text-blue-900">Tạo khóa học mới</h3>
-                <p className="text-sm text-blue-600">Thêm khóa học vào hệ thống</p>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {recentCourses.map(course => (
+                    <Link to={`/admin/courses/${course.id}`} key={course.id} className="group">
+                      <div className="bg-gray-50 rounded-lg overflow-hidden transition duration-300 transform group-hover:scale-105 group-hover:shadow-md">
+                        <img 
+                          src={course.image}
+                          alt={course.title}
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="p-4">
+                          <h3 className="font-medium text-gray-900 group-hover:text-blue-600 truncate">{course.title}</h3>
+                          <div className="flex justify-between mt-2 text-sm">
+                            <span className="text-gray-600">{course.enrollments} đăng ký</span>
+                            <span className="text-gray-500">{formatDate(course.dateCreated).split(',')[0]}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </Link>
-
-            <Link
-              to="/admin/courses"
-              className="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-            >
-              <div className="p-2 bg-green-500 text-white rounded">
-                📚
+            </div>
+            
+            {/* Khóa học hàng đầu */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="font-semibold text-lg text-gray-800">Khóa học hàng đầu</h2>
               </div>
-              <div className="ml-3">
-                <h3 className="font-medium text-green-900">Quản lý khóa học</h3>
-                <p className="text-sm text-green-600">Xem và chỉnh sửa khóa học</p>
+              <div className="p-6">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khóa học</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đăng ký</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tỷ lệ hoàn thành</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đánh giá</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {topCourses.map(course => (
+                        <tr key={course.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="font-medium text-gray-900">{course.title}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-gray-900">{course.enrollments}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${course.completionRate}%` }}></div>
+                              </div>
+                              <span className="text-gray-900">{course.completionRate}%</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex items-center text-yellow-400 mr-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <svg key={i} className={`w-4 h-4 ${i < Math.floor(course.rating) ? 'fill-current' : 'stroke-current fill-transparent'}`} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                  </svg>
+                                ))}
+                              </div>
+                              <span className="text-gray-900">{course.rating}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </Link>
-
-            <Link
-              to="/user-management"
-              className="flex items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors"
-            >
-              <div className="p-2 bg-purple-500 text-white rounded">
-                👥
-              </div>
-              <div className="ml-3">
-                <h3 className="font-medium text-purple-900">Quản lý người dùng</h3>
-                <p className="text-sm text-purple-600">Quản lý tài khoản học viên</p>
-              </div>
-            </Link>
+            </div>
           </div>
         </div>
       </div>

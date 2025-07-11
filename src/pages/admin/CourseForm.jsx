@@ -101,7 +101,17 @@ export default function CourseForm() {
       </div>
       <div className="mb-4">
         <label className="block font-medium mb-1">Cấp độ *</label>
-        <input type="text" name="level" value={formData.level} onChange={handleInputChange} className="w-full border rounded px-3 py-2" />
+        <select 
+          name="level" 
+          value={formData.level} 
+          onChange={handleInputChange} 
+          className="w-full border rounded px-3 py-2"
+        >
+          <option value="">-- Chọn cấp độ --</option>
+          <option value="Beginner">Beginner</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
+        </select>
         {errors.level && <div className="text-red-500 text-sm mt-1">{errors.level}</div>}
       </div>
       <div className="mb-4 flex gap-4">

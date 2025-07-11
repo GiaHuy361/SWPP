@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
   const checkSession = async () => {
     try {
       setLoading(true);
+      // Sử dụng /auth/user vì baseURL đã có /api
       const response = await apiClient.get('/auth/user', { withCredentials: true });
       const userData = response.data;
       console.log('Session check response:', userData);
@@ -49,16 +50,16 @@ export const AuthProvider = ({ children }) => {
         'MANAGE_APPOINTMENTS', 'MANAGE_COURSES', 'MANAGE_PROGRAMS', 'MANAGE_PARTICIPANTS',
         'MANAGE_CONSULTANTS', 'MANAGE_REPORTS', 'MANAGE_USERS', 'MANAGE_FAQ',
         'MANAGE_ORGANIZATIONS', 'MANAGE_RISK_ASSESSMENTS', 'MANAGE_PERSONAL_PROGRESS',
-        'MANAGE_SURVEYS', 'ROLE_Admin'
+        'MANAGE_SURVEYS', 'VIEW_NOTIFICATIONS', 'MANAGE_NOTIFICATIONS', 'ROLE_Admin'
       ],
       'Consultant': [
         'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
         'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS',
-        'VIEW_PARTICIPANTS', 'MANAGE_RISK_ASSESSMENTS', 'MANAGE_APPOINTMENTS', 'ROLE_Consultant'
+        'VIEW_PARTICIPANTS', 'MANAGE_RISK_ASSESSMENTS', 'MANAGE_APPOINTMENTS', 'VIEW_NOTIFICATIONS', 'ROLE_Consultant'
       ],
       'Member': [
         'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
-        'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS', 'ROLE_Member'
+        'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS', 'VIEW_NOTIFICATIONS', 'ROLE_Member'
       ],
       'Guest': [
         'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_PROGRAMS', 'ROLE_Guest'
@@ -66,14 +67,14 @@ export const AuthProvider = ({ children }) => {
       'Staff': [
         'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
         'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS',
-        'VIEW_PARTICIPANTS', 'MANAGE_RISK_ASSESSMENTS', 'MANAGE_COURSES', 'ROLE_Staff'
+        'VIEW_PARTICIPANTS', 'MANAGE_RISK_ASSESSMENTS', 'MANAGE_COURSES', 'VIEW_NOTIFICATIONS', 'ROLE_Staff'
       ],
       'Manager': [
         'VIEW_HOME_PAGE', 'VIEW_BLOGS', 'VIEW_FAQ', 'VIEW_SURVEYS', 'VIEW_RISK_ASSESSMENTS',
         'VIEW_COURSES', 'VIEW_PERSONAL_PROGRESS', 'BOOK_APPOINTMENTS', 'VIEW_PROGRAMS',
         'VIEW_PARTICIPANTS', 'VIEW_REPORTS', 'VIEW_USER_ACTIVITY', 'MANAGE_BLOGS',
         'MANAGE_APPOINTMENTS', 'MANAGE_COURSES', 'MANAGE_PROGRAMS', 'MANAGE_PARTICIPANTS',
-        'MANAGE_CONSULTANTS', 'MANAGE_REPORTS', 'ROLE_Manager'
+        'MANAGE_CONSULTANTS', 'MANAGE_REPORTS', 'VIEW_NOTIFICATIONS', 'MANAGE_NOTIFICATIONS', 'ROLE_Manager'
       ]
     };
     return rolePermissions[role] || [];
@@ -87,6 +88,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (usernameOrEmail, password) => {
     try {
+      // Sử dụng /auth/login vì baseURL đã có /api
       const response = await apiClient.post('/auth/login', { usernameOrEmail, password }, { withCredentials: true });
       console.log('Login response:', response.data);
       const user = response.data;
@@ -191,5 +193,14 @@ export const useAuth = () => {
       checkSession: async () => {}
     };
   }
+  
+  // Đảm bảo permissions luôn là mảng, ngay cả khi user là null
+  if (context.user && !Array.isArray(context.user.permissions)) {
+    context.user = {
+      ...context.user,
+      permissions: []
+    };
+  }
+  
   return context;
 };

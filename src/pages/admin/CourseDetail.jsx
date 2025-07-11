@@ -4,6 +4,16 @@ import axios from '../../utils/axios';
 
 export default function CourseDetail() {
   const { courseId } = useParams();
+  
+  // Debug params
+  useEffect(() => {
+    console.log('🔍 CourseDetail useParams:', { courseId });
+    console.log('🔍 Current URL:', window.location.href);
+    if (courseId?.includes(':')) {
+      console.error('❌ CourseId contains ":" character:', courseId);
+    }
+  }, [courseId]);
+  
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
@@ -112,23 +122,19 @@ export default function CourseDetail() {
               >
                 Quản lý Module
               </Link>
+
               <Link
-                to={`/admin/courses/${courseId}/students`}
+                to={`/admin/courses/${courseId}/modules/1/lessons/1/quizzes`}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
-                Quản lý Học viên
+                Quản lý Quiz
               </Link>
-              <Link
-                to={`/admin/courses/${courseId}/certificates`}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-              >
-                Quản lý Chứng chỉ
-              </Link>
+             
               <Link
                 to={`/admin/courses/${courseId}/edit`}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Chỉnh sửa
+                Chỉnh sửa thông tin khóa học
               </Link>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axios';
 
@@ -6,34 +6,104 @@ export default function CourseManagement() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
+  const [searchMethod, setSearchMethod] = useState(''); // Track how search is performed
+  const [debugMode, setDebugMode] = useState(false);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // Reset to page 1 when searching
+      if (searchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearchTerm]);
 
   // Fetch courses
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
+      
+      // Try different parameter names that backend might support
+      if (debouncedSearchTerm.trim()) {
+        // Common search parameter names
+        params.append('search', debouncedSearchTerm.trim());
+        params.append('q', debouncedSearchTerm.trim());
+        params.append('keyword', debouncedSearchTerm.trim());
+        params.append('title', debouncedSearchTerm.trim());
+      }
+      
       params.append('page', currentPage - 1);
       params.append('size', 10);
-      const response = await axios.get(`/courses?${params.toString()}`);
-      setCourses(response.data.content || response.data || []);
-      if (response.data.totalPages) {
-        setTotalPages(response.data.totalPages);
+      
+      console.log('API Call:', `/courses?${params.toString()}`); // Debug log
+      
+      // First try with search parameters
+      let response;
+      try {
+        response = await axios.get(`/courses?${params.toString()}`);
+        setSearchMethod('Backend Search');
+      } catch (searchError) {
+        console.log('Search with parameters failed, trying without search params:', searchError);
+        setSearchMethod('Client-side Filter');
+        // If search with parameters fails, try getting all courses and filter client-side
+        const simpleParams = new URLSearchParams();
+        simpleParams.append('page', currentPage - 1);
+        simpleParams.append('size', 100); // Get more courses for client-side filtering
+        response = await axios.get(`/courses?${simpleParams.toString()}`);
       }
+      
+      console.log('API Response:', response.data); // Debug log
+      
+      let coursesData = response.data.content || response.data || [];
+      
+      // If we have a search term and got all courses, filter client-side
+      if (debouncedSearchTerm.trim() && Array.isArray(coursesData)) {
+        const searchLower = debouncedSearchTerm.toLowerCase();
+        coursesData = coursesData.filter(course => 
+          (course.title && course.title.toLowerCase().includes(searchLower)) ||
+          (course.description && course.description.toLowerCase().includes(searchLower)) ||
+          (course.ageGroup && course.ageGroup.toLowerCase().includes(searchLower)) ||
+          (course.level && course.level.toLowerCase().includes(searchLower))
+        );
+        
+        // Manual pagination for filtered results
+        const startIndex = (currentPage - 1) * 10;
+        const endIndex = startIndex + 10;
+        const paginatedData = coursesData.slice(startIndex, endIndex);
+        
+        setCourses(paginatedData);
+        setTotalPages(Math.ceil(coursesData.length / 10));
+      } else {
+        setCourses(coursesData);
+        if (response.data.totalPages) {
+          setTotalPages(response.data.totalPages);
+        } else {
+          setTotalPages(Math.ceil(coursesData.length / 10));
+        }
+      }
+      
     } catch (error) {
+      console.error('Fetch courses error:', error); // Debug log
       setCourses([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearchTerm, currentPage]);
 
   useEffect(() => {
     fetchCourses();
-  }, [currentPage, searchTerm]);
+  }, [fetchCourses]);
 
   // Delete course
   const handleDeleteCourse = async () => {
@@ -67,14 +137,52 @@ export default function CourseManagement() {
         </div>
 
         {/* Search */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 flex flex-col md:flex-row gap-4 items-center">
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên, mô tả, nhóm tuổi..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="w-full md:w-1/2 relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tên, mô tả, nhóm tuổi..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  title="Xóa tìm kiếm"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              {loading && searchTerm && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  Đang tìm kiếm...
+                </div>
+              )}
+              {debouncedSearchTerm && !loading && (
+                <div className="text-sm text-gray-500">
+                  Tìm thấy <span className="font-semibold text-blue-600">{courses.length}</span> kết quả cho "<span className="font-medium">{debouncedSearchTerm}</span>"
+                  {debugMode && searchMethod && (
+                    <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded">
+                      ({searchMethod})
+                    </span>
+                  )}
+                </div>
+              )}
+              <button
+                onClick={() => setDebugMode(!debugMode)}
+                className="text-xs text-gray-400 hover:text-gray-600"
+                title="Toggle debug mode"
+              >
+                🔧
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Courses Table */}
@@ -137,7 +245,10 @@ export default function CourseManagement() {
                     ) : (
                       <tr>
                         <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                          Không tìm thấy khóa học nào
+                          {debouncedSearchTerm ? 
+                            `Không tìm thấy khóa học nào với từ khóa "${debouncedSearchTerm}"` : 
+                            'Không có khóa học nào'
+                          }
                         </td>
                       </tr>
                     )}

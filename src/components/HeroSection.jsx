@@ -8,26 +8,26 @@ const HeroSection = () => {
         <div className="flex-1 flex justify-center md:justify-start mb-8 md:mb-0">
           <img
             src="/hero.png"
-            alt="No Drugs Team Logo"
+            alt="Đội Phòng Chống Ma Túy"
             className="w-[420px] h-[420px] max-w-[48vw] object-contain drop-shadow-2xl rounded-xl"
           />
         </div>
         {/* Nội dung bên phải */}
         <div className="flex-1 text-center md:text-left flex flex-col items-center md:items-start justify-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-blue-800 mb-4 leading-tight">
-            Welcome to <br /> Our Platform
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-blue-800 mb-6 leading-tight">
+            Chào mừng đến với <br /> 
+            <span className="text-blue-600">Nền tảng của chúng tôi</span>
           </h1>
-          <p className="text-xl text-gray-700 mb-8 max-w-xl">
-            Discover amazing features and services that will transform your
-            experience
+          <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-xl leading-relaxed">
+            Khám phá những tính năng tuyệt vời và dịch vụ sẽ thay đổi trải nghiệm của bạn
           </p>
-          <div className="flex flex-col md:flex-row gap-4 justify-center md:justify-start">
-            <button className="px-8 py-3 text-lg font-semibold text-white bg-blue-700 rounded-lg hover:bg-blue-800 transition-colors duration-300">
-              Get Started
+          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+            <button className="px-6 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg">
+              Bắt đầu ngay
             </button>
             <a
               href="/courses/enroll"
-              className="px-8 py-3 text-lg font-semibold text-blue-700 border-2 border-blue-700 rounded-lg hover:bg-blue-50 transition-colors duration-300 text-center"
+              className="px-6 py-3 text-base font-medium text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-300 text-center shadow-sm hover:shadow-md"
             >
               Khóa học
             </a>

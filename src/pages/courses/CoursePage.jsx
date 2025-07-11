@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import CourseLayout from './CourseLayout';
 import { getModulesByCourseId, getLessonsByModuleId } from '../../services/courseService';
-import { useParams } from 'react-router-dom';
-import QuizModal from '../../components/QuizModal';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getCourseProgress } from '../../services/progressService';
 import axios from '../../utils/axios';
 
@@ -10,12 +9,12 @@ export default function CoursePage(props) {
   // Lấy courseId từ URL nếu chưa truyền props
   const params = useParams();
   const courseId = props.courseId || params.courseId;
+  const navigate = useNavigate();
   const [modules, setModules] = useState([]);
   const [currentModuleId, setCurrentModuleId] = useState(null);
   const [currentLessonId, setCurrentLessonId] = useState(null);
   const [lessonContent, setLessonContent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showQuiz, setShowQuiz] = useState(false);
   const [completedLessons, setCompletedLessons] = useState([]);
   const [progressPercent, setProgressPercent] = useState(0);
   const [completeLoading, setCompleteLoading] = useState(false);
@@ -310,10 +309,10 @@ export default function CoursePage(props) {
               {/* Nút quiz luôn hiện nếu có quiz cho khóa học */}
               {courseQuiz && (
                 <button
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition"
-                  onClick={() => setShowQuiz(true)}
+                  className={`px-4 py-2 ${isQuizPassed ? 'bg-green-600' : 'bg-purple-600'} text-white rounded-lg font-semibold hover:${isQuizPassed ? 'bg-green-700' : 'bg-purple-700'} transition`}
+                  onClick={() => navigate(`/courses/${courseId}/quizzes/${courseQuiz.id}`)}
                 >
-                  {isQuizPassed ? 'Quiz: Đã pass' : 'Làm quiz'}
+                  {isQuizPassed ? '✓ Quiz: Đã pass' : '📝 Làm quiz'}
                 </button>
               )}
             </div>
@@ -376,66 +375,7 @@ export default function CoursePage(props) {
               </div>
             </div>
           )}
-          {showQuiz && courseQuiz && (
-            <QuizModal 
-              courseId={courseId} 
-              quizId={courseQuiz.id}
-              onClose={() => setShowQuiz(false)} 
-              onQuizCompleted={async (submissionData) => {
-                // Gọi lại fetchCourseQuizAndStatus và fetchProgress để cập nhật UI
-                console.log('🔄 Quiz completed, refreshing status...');
-                
-                // If we have submission data from the quiz submission, use it directly
-                if (submissionData) {
-                  setQuizStatus({ passed: submissionData.passed, lastResult: submissionData });
-                  console.log('✅ Quiz status updated directly from submission:', submissionData);
-                } else {
-                  // Fallback: refetch from API
-                  let submissionFound = false;
-                  
-                  // Try endpoint 1: /quizzes/{id}/my-latest-submission
-                  try {
-                    const resultRes = await axios.get(`/quizzes/${courseQuiz.id}/my-latest-submission`);
-                    setQuizStatus({ passed: resultRes.data?.passed, lastResult: resultRes.data });
-                    console.log('✅ Quiz status updated via /my-latest-submission:', resultRes.data);
-                    submissionFound = true;
-                  } catch (error1) {
-                    console.log('❌ /my-latest-submission failed:', error1.response?.status);
-                    
-                    // Try endpoint 2: /quizzes/{id}/submissions
-                    try {
-                      const submissionsRes = await axios.get(`/quizzes/${courseQuiz.id}/submissions`);
-                      const submissions = submissionsRes.data || [];
-                      if (submissions.length > 0) {
-                        const latestSubmission = submissions[submissions.length - 1];
-                        setQuizStatus({ passed: latestSubmission?.passed, lastResult: latestSubmission });
-                        console.log('✅ Quiz status updated via /submissions:', latestSubmission);
-                        submissionFound = true;
-                      }
-                    } catch (error2) {
-                      console.log('❌ /submissions also failed:', error2.response?.status);
-                    }
-                  }
-                  
-                  if (!submissionFound) {
-                    setQuizStatus({ passed: false, lastResult: null });
-                    console.log('⚠️ No quiz submission found after completion (this should not happen)');
-                  }
-                }
-                
-                // Always refetch progress
-                try {
-                  const res = await getCourseProgress(courseId);
-                  const completed = res.data?.map((p) => p.lessonId) || [];
-                  setCompletedLessons(completed);
-                  console.log('✅ Updated completed lessons:', completed);
-                } catch (error) {
-                  setCompletedLessons([]);
-                  console.error('❌ Error updating progress:', error);
-                }
-              }}
-            />
-          )}
+          {/* Quiz modal removed */}
         </div>
       ) : (
         <div className="text-gray-500">Chọn một bài học để bắt đầu.</div>
