@@ -19,4 +19,5 @@ public interface ReactionRepository extends JpaRepository<Reaction, Long> {
      * @return Optional chứa Reaction nếu tìm thấy, không thì Optional.empty().
      */
     Optional<Reaction> findByUserUserIdAndPostId(Long userId, Long postId);
+    long countByPostIdAndType(Long postId, Reaction.ReactionType type);
 }

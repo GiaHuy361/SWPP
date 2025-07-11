@@ -25,6 +25,9 @@ public class CommentDTO {
     private Long authorId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String authorName;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long postId;
 
     private Long parentId;
@@ -40,6 +43,8 @@ public class CommentDTO {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public Long getAuthorId() { return authorId; }
     public void setAuthorId(Long authorId) { this.authorId = authorId; }
+    public String getAuthorName() { return authorName; }
+    public void setAuthorName(String authorName) { this.authorName = authorName; }
     public Long getPostId() { return postId; }
     public void setPostId(Long postId) { this.postId = postId; }
     public Long getParentId() { return parentId; }

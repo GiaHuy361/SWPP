@@ -33,4 +33,10 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
     @Query("SELECT p FROM BlogPost p WHERE p.publishedAt IS NOT NULL AND p.publishedAt <= :currentTime")
     Page<BlogPost> findPublishedPosts(@Param("currentTime") LocalDateTime currentTime, Pageable pageable);
 
+    /**
+     * Tìm tất cả bài viết (bao gồm cả bản nháp và đã xuất bản), hỗ trợ phân trang.
+     * @param pageable Đối tượng phân trang, bao gồm sort và page size.
+     * @return Page chứa danh sách tất cả bài viết.
+     */
+    Page<BlogPost> findAll(Pageable pageable);
 }

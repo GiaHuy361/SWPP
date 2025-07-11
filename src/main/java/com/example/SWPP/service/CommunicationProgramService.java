@@ -46,6 +46,7 @@ public class CommunicationProgramService {
                 (dto.getEndDate() == null || dto.getEndDate().isAfter(currentTime))) {
             program.setParticipantCount(0);
             program.setInteractionCount(0);
+            program.setFeedbackCount(0);
         }
         return programRepository.save(program);
     }
@@ -64,10 +65,7 @@ public class CommunicationProgramService {
                 .orElseThrow(() -> new RuntimeException("Chương trình không tồn tại"));
         program.setTitle(dto.getTitle());
         program.setDescription(dto.getDescription());
-        program.setParticipantCount(dto.getParticipantCount());
-        program.setInteractionCount(dto.getInteractionCount());
         program.setAverageRating(dto.getAverageRating());
-        program.setFeedbackCount(dto.getFeedbackCount());
         program.setStartDate(dto.getStartDate());
         program.setEndDate(dto.getEndDate());
         program.setStatus(dto.getStatus());
@@ -88,7 +86,6 @@ public class CommunicationProgramService {
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        // Kiểm tra xem người dùng đã tham gia chương trình chưa
         if (!program.getParticipants().contains(dto.getUserId())) {
             throw new RuntimeException("Người dùng chưa tham gia chương trình này");
         }
@@ -148,13 +145,13 @@ public class CommunicationProgramService {
     public int countParticipants(Long programId) {
         return programRepository.findById(programId)
                 .map(CommunicationProgram::getParticipantCount)
-                .orElse(0);
+                .orElseThrow(() -> new RuntimeException("Chương trình không tồn tại"));
     }
 
     public int countInteractions(Long programId) {
         return programRepository.findById(programId)
                 .map(CommunicationProgram::getInteractionCount)
-                .orElse(0);
+                .orElseThrow(() -> new RuntimeException("Chương trình không tồn tại"));
     }
 
     public void incrementParticipant(Long programId, Long userId, LocalDateTime currentTime) {
@@ -168,7 +165,6 @@ public class CommunicationProgramService {
             program.setUpdatedAt(currentTime);
             programRepository.save(program);
 
-            // Gửi giấy mời qua email
             String subject = "Thư Mời Tham Gia Chương Trình: " + program.getTitle();
             String text = "Chào " + user.getUsername() + ",\n\n" +
                     "Bạn đã được mời tham gia chương trình \"" + program.getTitle() + "\".\n" +
@@ -188,15 +184,33 @@ public class CommunicationProgramService {
         programRepository.save(program);
     }
 
-    @Scheduled(cron = "0 0 * * * *") // Chạy mỗi giờ
+    @Scheduled(cron = "0 0 * * * *")
     public void updateProgramStatus() {
         LocalDateTime currentTime = LocalDateTime.now();
         List<CommunicationProgram> activePrograms = programRepository.findByStatusAndEndDateBefore("active", currentTime);
         for (CommunicationProgram program : activePrograms) {
             program.setStatus("inactive");
-            program.setFinalAverageRating(program.getAverageRating()); // Lưu điểm trung bình cuối cùng
+            program.setFinalAverageRating(program.getAverageRating());
             program.setUpdatedAt(currentTime);
             programRepository.save(program);
         }
+    }
+    /**
+     * Lấy danh sách ID chương trình mà user đã tham gia
+     * @param userId ID của user cần kiểm tra
+     * @return Danh sách ID của các chương trình mà user đã tham gia
+     */
+    public List<Long> getUserJoinedProgramIds(Long userId) {
+        return programRepository.findProgramIdsByParticipantId(userId);
+    }
+
+    /**
+     * Kiểm tra xem một user cụ thể đã tham gia chương trình chưa
+     * @param userId ID của user
+     * @param programId ID của chương trình
+     * @return true nếu user đã tham gia, ngược lại false
+     */
+    public boolean hasUserJoinedProgram(Long userId, Long programId) {
+        return programRepository.existsByProgramIdAndParticipantId(programId, userId);
     }
 }

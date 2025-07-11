@@ -5,10 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
-/**
- * DTO duy nhất cho BlogPost, dùng cho cả request (tạo/cập nhật) và response (danh sách/chi tiết).
- * Sử dụng Jackson annotations để kiểm soát serialization/deserialization.
- */
 public class BlogPostDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
@@ -23,6 +19,8 @@ public class BlogPostDTO {
     @NotBlank(message = "Nội dung không được để trống")
     private String content;
 
+    private String imageUrl;
+
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
 
@@ -35,7 +33,12 @@ public class BlogPostDTO {
     private Long categoryId;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String categoryName;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long authorId;
+
+    private String authorName; // Loại bỏ READ_ONLY để cho phép chỉnh sửa
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -48,6 +51,8 @@ public class BlogPostDTO {
     public void setExcerpt(String excerpt) { this.excerpt = excerpt; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
@@ -56,6 +61,10 @@ public class BlogPostDTO {
     public void setPublishedAt(LocalDateTime publishedAt) { this.publishedAt = publishedAt; }
     public Long getCategoryId() { return categoryId; }
     public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
     public Long getAuthorId() { return authorId; }
     public void setAuthorId(Long authorId) { this.authorId = authorId; }
+    public String getAuthorName() { return authorName; }
+    public void setAuthorName(String authorName) { this.authorName = authorName; }
 }

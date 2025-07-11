@@ -6,17 +6,8 @@ import com.example.SWPP.entity.Category;
 import com.example.SWPP.entity.User;
 import org.springframework.stereotype.Component;
 
-/**
- * Mapper cho BlogPost, ánh xạ giữa entity và DTO.
- * Sử dụng phương thức tĩnh để chuyển đổi, dễ kiểm soát và debug.
- */
 @Component
 public class BlogPostMapper {
-    /**
-     * Chuyển đổi BlogPost entity sang BlogPostDTO.
-     * @param entity BlogPost entity.
-     * @return BlogPostDTO chứa thông tin bài viết.
-     */
     public static BlogPostDTO toDto(BlogPost entity) {
         BlogPostDTO dto = new BlogPostDTO();
         dto.setId(entity.getId());
@@ -24,30 +15,28 @@ public class BlogPostMapper {
         dto.setSlug(entity.getSlug());
         dto.setExcerpt(entity.getExcerpt());
         dto.setContent(entity.getContent());
+        dto.setImageUrl(entity.getImageUrl());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         dto.setPublishedAt(entity.getPublishedAt());
         dto.setCategoryId(entity.getCategory().getId());
+        dto.setCategoryName(entity.getCategory().getName());
         dto.setAuthorId(entity.getAuthor().getUserId());
+        dto.setAuthorName(entity.getAuthorName() != null ? entity.getAuthorName() : entity.getAuthor().getFullName());
         return dto;
     }
 
-    /**
-     * Chuyển đổi BlogPostDTO sang BlogPost entity, dùng cho tạo bài viết.
-     * @param dto BlogPostDTO chứa thông tin từ request.
-     * @param author User là tác giả bài viết.
-     * @param category Category của bài viết.
-     * @return BlogPost entity.
-     */
     public static BlogPost toEntity(BlogPostDTO dto, User author, Category category) {
         BlogPost entity = new BlogPost();
         entity.setTitle(dto.getTitle());
         entity.setSlug(dto.getSlug());
         entity.setExcerpt(dto.getExcerpt());
         entity.setContent(dto.getContent());
+        entity.setImageUrl(dto.getImageUrl());
         entity.setPublishedAt(dto.getPublishedAt());
         entity.setCategory(category);
         entity.setAuthor(author);
+        entity.setAuthorName(dto.getAuthorName());
         return entity;
     }
 }

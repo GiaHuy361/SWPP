@@ -15,9 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Controller cho Bookmark: check, tạo, xóa bookmark.
- */
 @RestController
 @RequestMapping("/api/bookmarks")
 public class BookmarkController {
@@ -33,13 +30,18 @@ public class BookmarkController {
     }
 
     @GetMapping("/check/{postId}")
-    @PreAuthorize("hasAuthority('VIEW_BLOGS')")
     public ResponseEntity<Boolean> isBookmarked(
             @PathVariable Long postId,
-            Authentication authentication
-    ) {
-        Long userId = getUserId(authentication);
-        boolean isBookmarked = bookmarkService.isBookmarked(userId, postId);
+            Authentication authentication) {
+        Long userId = null;
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+            String principal = authentication.getName();
+            User user = userRepository.findByUsername(principal)
+                    .or(() -> userRepository.findByEmail(principal))
+                    .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy user: " + principal));
+            userId = user.getUserId();
+        }
+        boolean isBookmarked = userId != null ? bookmarkService.isBookmarked(userId, postId) : false;
         return ResponseEntity.ok(isBookmarked);
     }
 
@@ -47,8 +49,7 @@ public class BookmarkController {
     @PreAuthorize("hasAuthority('BOOKMARK_POSTS')")
     public ResponseEntity<BookmarkDTO> createBookmark(
             @PathVariable Long postId,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         Long userId = getUserId(authentication);
         BookmarkDTO bookmark = bookmarkService.createBookmark(userId, postId);
         return ResponseEntity.status(HttpStatus.CREATED).body(bookmark);
@@ -58,8 +59,7 @@ public class BookmarkController {
     @PreAuthorize("hasAuthority('BOOKMARK_POSTS')")
     public ResponseEntity<Void> deleteBookmark(
             @PathVariable Long postId,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         Long userId = getUserId(authentication);
         bookmarkService.deleteBookmark(userId, postId);
         return ResponseEntity.noContent().build();

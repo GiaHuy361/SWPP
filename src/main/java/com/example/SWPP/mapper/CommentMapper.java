@@ -24,6 +24,7 @@ public class CommentMapper {
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         dto.setAuthorId(entity.getAuthor().getUserId());
+        dto.setAuthorName(entity.getAuthor().getFullName());
         dto.setPostId(entity.getPost().getId());
         if (entity.getParent() != null) {
             dto.setParentId(entity.getParent().getId());
