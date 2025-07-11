@@ -138,7 +138,8 @@ export const lessonService = {
   // Get quiz count for a course
   getQuizCount: async (courseId) => {
     try {
-      const response = await axios.get(`/courses/${courseId}/quizzes/count`);
+      // Updated to match the backend controller endpoint
+      const response = await axios.get(`/api/courses/${courseId}/quizzes/quizzes/count`);
       return response.data.count || 0;
     } catch (error) {
       console.error('Lỗi khi đếm số lượng quiz:', error);

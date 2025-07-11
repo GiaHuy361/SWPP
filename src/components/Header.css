@@ -2,7 +2,7 @@
   background: linear-gradient(135deg, #e3f6fc 60%, #f5faff 100%);
   border-bottom: 1.5px solid #e3eaf3;
   box-shadow: 0 2px 12px #b3e5fc33;
-  padding: 0 0;
+  padding: 0;
   width: 100vw;
   min-width: 100vw;
   margin: 0;
@@ -10,6 +10,8 @@
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
+  position: relative;
+  top: 0;
 }
 
 .header-logo {

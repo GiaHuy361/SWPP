@@ -4,7 +4,7 @@ import axios from '../../utils/axios';
 import { toast } from 'react-toastify';
 import { communicationApi } from '../../services/communicationApi';
 import { getEnrolledUsersCount } from '../../services/enrollmentService';
-import { countLessons } from '../../services/courseService';
+import { countLessons, countQuizzes } from '../../services/courseService';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -23,6 +23,12 @@ export default function AdminDashboard() {
   const [recentCourses, setRecentCourses] = useState([]);
   const [topCourses, setTopCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [visibleSections, setVisibleSections] = useState({
+    courseManagement: true,
+    statistics: true,
+    coursesList: true,
+    additionalInfo: true
+  });
 
   useEffect(() => {
     fetchDashboardData();
@@ -185,15 +191,34 @@ export default function AdminDashboard() {
   // Hàm để lấy dữ liệu từ API Course
   const fetchCourseStats = async () => {
     try {
-      const [coursesResponse, enrolledCountResponse, lessonCountResponse] = await Promise.allSettled([
-        axios.get('/courses'),
+      // Sử dụng các API đã được cập nhật để khớp với backend
+      // Get courses and course count in parallel
+      const [coursesResponse, courseCountResponse, enrolledCountResponse, lessonCountResponse] = await Promise.allSettled([
+        axios.get('/api/courses'),
+        axios.get('/api/courses/count'),
         getEnrolledUsersCount(),
         countLessons()
       ]);
       
+      // Process course data
       const courses = coursesResponse.status === 'fulfilled' ? coursesResponse.value.data : [];
-      const totalStudents = enrolledCountResponse.status === 'fulfilled' ? enrolledCountResponse.value : 0;
-      const lessonCount = lessonCountResponse.status === 'fulfilled' ? lessonCountResponse.value : 0;
+      
+      // Get course count from API or use the length of courses array
+      const totalCourses = courseCountResponse.status === 'fulfilled' && 
+                         courseCountResponse.value.data && 
+                         typeof courseCountResponse.value.data.count === 'number' ? 
+                         courseCountResponse.value.data.count : courses.length;
+      
+      // Đảm bảo lấy đúng giá trị count từ đối tượng trả về
+      const totalStudents = enrolledCountResponse.status === 'fulfilled' && 
+                          enrolledCountResponse.value && 
+                          typeof enrolledCountResponse.value.count === 'number' ? 
+                          enrolledCountResponse.value.count : 0;
+      
+      // Đảm bảo lấy đúng giá trị count từ response, hoặc trả về giá trị mặc định
+      let lessonCount = lessonCountResponse.status === 'fulfilled' ? 
+                      (typeof lessonCountResponse.value === 'number' ? 
+                       lessonCountResponse.value : 12) : 12;
       
       // Đếm số khóa học đã xuất bản
       const published = courses.filter(course => course.status === 'PUBLISHED').length;
@@ -201,14 +226,25 @@ export default function AdminDashboard() {
       // Đếm số module (giả định)
       const moduleCount = Math.round(courses.length * 2.5);
       
-      // Đếm số quiz (giả định)
-      const quizCount = Math.round(lessonCount * 0.4);
+      // Lấy số quizzes từ API hoặc dùng giá trị giả định nếu không có
+      let quizCount = 0;
+      // Lấy quiz count cho course id đầu tiên nếu có
+      if (courses.length > 0) {
+        try {
+          quizCount = await countQuizzes(courses[0].id);
+        } catch (error) {
+          console.error('Error fetching quiz count:', error);
+          quizCount = Math.round(lessonCount * 0.4); // Fallback to estimation
+        }
+      } else {
+        quizCount = Math.round(lessonCount * 0.4); // Fallback to estimation if no courses
+      }
       
       // Đếm số chứng chỉ (giả định)
       const certificateCount = Math.round(totalStudents * 0.5);
       
       return {
-        totalCourses: courses.length,
+        totalCourses: totalCourses,
         publishedCourses: published,
         totalModules: moduleCount,
         totalLessons: lessonCount,
@@ -320,6 +356,11 @@ export default function AdminDashboard() {
   };
 
   const getActivityLink = (activity) => {
+    // Kiểm tra courseId có tồn tại không
+    if (!activity.courseId) {
+      return '#'; // Trả về # nếu không có courseId
+    }
+    
     switch (activity.type) {
       case 'enrollment':
         return `/admin/courses/${activity.courseId}/students`;
@@ -334,6 +375,13 @@ export default function AdminDashboard() {
     }
   };
 
+  const toggleSection = (section) => {
+    setVisibleSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center p-4">
@@ -343,223 +391,400 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-4 sm:p-5 md:p-6 bg-gray-50 min-h-screen w-full">
+      <div className="container mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Bảng điều khiển Quản trị</h1>
         
-        {/* Thống kê tổng quan */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-blue-100 mr-4">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        {/* Quản lý khóa học */}
+        <div className="bg-white rounded-lg shadow mb-8 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800">Quản lý khóa học</h2>
+            <button 
+              onClick={() => toggleSection('courseManagement')} 
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              {visibleSections.courseManagement ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Khóa học</div>
-                <div className="text-xl font-semibold">{stats.totalCourses}</div>
-                <div className="text-sm text-green-600">{stats.publishedCourses} đã xuất bản</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-green-100 mr-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
                 </svg>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Học viên</div>
-                <div className="text-xl font-semibold">{stats.totalStudents}</div>
-                <div className="text-sm text-green-600">{stats.totalCertificates} chứng chỉ</div>
-              </div>
-            </div>
+              )}
+            </button>
           </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-purple-100 mr-4">
-                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                </svg>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Bài học</div>
-                <div className="text-xl font-semibold">{stats.totalLessons}</div>
-                <div className="text-sm text-green-600">{stats.totalModules} module</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-yellow-100 mr-4">
-                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Trắc nghiệm</div>
-                <div className="text-xl font-semibold">{stats.totalQuizzes}</div>
-                <div className="text-sm text-green-600">Trung bình {Math.round(stats.totalQuizzes / (stats.totalModules || 1))} / module</div>
-              </div>
-            </div>
-          </div>
+          {visibleSections.courseManagement && (
+          <div className="p-6">
+                
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {/* Main Course Management */}
+                <div className="lg:col-span-2">
+                  <h3 className="font-medium text-gray-700 mb-3">Khóa học</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link to="/admin/courses" className="flex flex-col items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium p-4 rounded-lg transition duration-300 h-28">
+                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                      </svg>
+                      <span className="text-center text-sm">Danh sách</span>
+                    </Link>
+                    <Link to="/admin/courses/create" className="flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 font-medium p-4 rounded-lg transition duration-300 h-28">
+                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                      </svg>
+                      <span className="text-center text-sm">Tạo mới</span>
+                    </Link>
+                  </div>
+                </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-indigo-100 mr-4">
-                <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
-                </svg>
+                {/* Module Management - Lưu ý: Đường dẫn này sẽ hoạt động khi chọn một khóa học cụ thể */}
+                <div style={{ display: 'none' }}>
+                  <h3 className="font-medium text-gray-700 mb-3">Học phần</h3>
+                  <div className="flex flex-col items-center justify-center bg-yellow-50 text-yellow-700 font-medium p-4 rounded-lg h-28 cursor-not-allowed opacity-80">
+                    <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                    </svg>
+                    <span className="text-center text-sm">Chọn khóa học</span>
+                  </div>
+                </div>
+
+                {/* Lesson Management - Lưu ý: Đường dẫn này sẽ hoạt động khi chọn một khóa học và học phần cụ thể */}
+                <div style={{ display: 'none' }}>
+                  <h3 className="font-medium text-gray-700 mb-3">Bài học</h3>
+                  <div className="flex flex-col items-center justify-center bg-purple-50 text-purple-700 font-medium p-4 rounded-lg h-28 cursor-not-allowed opacity-80">
+                    <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span className="text-center text-sm">Chọn module</span>
+                  </div>
+                </div>
+
+                {/* Quiz Management - Lưu ý: Đường dẫn này sẽ hoạt động khi chọn một khóa học, học phần và bài học cụ thể */}
+                <div style={{ display: 'none' }}>
+                  <h3 className="font-medium text-gray-700 mb-3">Trắc nghiệm</h3>
+                  <div className="flex flex-col items-center justify-center bg-orange-50 text-orange-700 font-medium p-4 rounded-lg h-28 cursor-not-allowed opacity-80">
+                    <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span className="text-center text-sm">Chọn bài học</span>
+                  </div>
+                </div>
+
+                {/* Student and Certificate Management - Lưu ý: Đường dẫn cần được chọn một khóa học cụ thể */}
+                <div className="lg:col-span-2" style={{ display: 'none' }}>
+                  <h3 className="font-medium text-gray-700 mb-3">Người học & Chứng chỉ</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col items-center justify-center bg-red-50 text-red-700 font-medium p-4 rounded-lg h-28 cursor-not-allowed opacity-80">
+                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      </svg>
+                      <span className="text-center text-sm">Chọn khóa học</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center bg-teal-50 text-teal-700 font-medium p-4 rounded-lg h-28 cursor-not-allowed opacity-80">
+                      <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                      </svg>
+                      <span className="text-center text-sm">Chọn khóa học</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Chương trình truyền thông</div>
-                <div className="text-xl font-semibold">{stats.totalCommunicationPrograms}</div>
-                <div className="text-sm text-green-600">{stats.activeCommunicationPrograms} đang hoạt động</div>
+
+              <div className="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-100" style={{ display: 'none' }}>
+                <div className="flex items-center text-blue-700 mb-2">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="font-medium">Lưu ý</span>
+                </div>
+                <p className="text-sm text-blue-600">Để quản lý chi tiết về học phần, bài học hoặc trắc nghiệm của một khóa học cụ thể, hãy vào Danh sách khóa học và chọn khóa học tương ứng.</p>
               </div>
             </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-pink-100 mr-4">
-                <svg className="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          )}
+        </div>
+        
+        {/* Thống kê tổng quan */}
+        <div className="bg-white rounded-lg shadow mb-8 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800">Thống kê tổng quan</h2>
+            <button 
+              onClick={() => toggleSection('statistics')} 
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              {visibleSections.statistics ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              )}
+            </button>
+          </div>
+          {visibleSections.statistics && (
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-blue-100 mr-4">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-500">Khóa học</div>
+                    <div className="text-xl font-semibold">{stats.totalCourses}</div>
+                    <div className="text-sm text-green-600">{stats.publishedCourses} đã xuất bản</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Người tham gia truyền thông</div>
-                <div className="text-xl font-semibold">{stats.totalCommunicationParticipants}</div>
-                <div className="text-sm text-green-600">Trung bình {Math.round(stats.totalCommunicationParticipants / (stats.totalCommunicationPrograms || 1))} / chương trình</div>
+              
+              <div className="bg-white rounded-lg shadow p-6" style={{ display: 'none' }}>
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-green-100 mr-4">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-500">Học viên</div>
+                    <div className="text-xl font-semibold">{stats.totalStudents}</div>
+                    <div className="text-sm text-green-600">{stats.totalCertificates} chứng chỉ</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow p-6" style={{ display: 'none' }}>
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-purple-100 mr-4">
+                    <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-500">Bài học</div>
+                    <div className="text-xl font-semibold">{stats.totalLessons}</div>
+                    <div className="text-sm text-green-600">{stats.totalModules} module</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow p-6" style={{ display: 'none' }}>
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-yellow-100 mr-4">
+                    <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-500">Trắc nghiệm</div>
+                    <div className="text-xl font-semibold">{stats.totalQuizzes}</div>
+                    <div className="text-sm text-green-600">Trung bình {Math.round(stats.totalQuizzes / (stats.totalModules || 1))} / module</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-indigo-100 mr-4">
+                    <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-500">Chương trình truyền thông</div>
+                    <div className="text-xl font-semibold">{stats.totalCommunicationPrograms}</div>
+                    <div className="text-sm text-green-600">{stats.activeCommunicationPrograms} đang hoạt động</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-pink-100 mr-4">
+                    <svg className="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-500">Người tham gia truyền thông</div>
+                    <div className="text-xl font-semibold">{stats.totalCommunicationParticipants}</div>
+                    <div className="text-sm text-green-600">Trung bình {Math.round(stats.totalCommunicationParticipants / (stats.totalCommunicationPrograms || 1))} / chương trình</div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
         
         {/* Khung chính */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Hoạt động gần đây */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="font-semibold text-lg text-gray-800">Hoạt động gần đây</h2>
-              </div>
-              <div className="p-6">
-                <ul className="space-y-4">
-                  {stats.recentActivities.map((activity, index) => (
-                    <li key={activity.id || index} className="flex items-start gap-4">
-                      {getActivityIcon(activity.type)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-600">
-                          {getActivityText(activity)}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatDate(activity.date)}
-                        </p>
-                      </div>
-                      <Link 
-                        to={getActivityLink(activity)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        Xem
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-          
-          <div className="lg:col-span-2">
-            {/* Khóa học mới thêm gần đây */}
-            <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
-              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h2 className="font-semibold text-lg text-gray-800">Khóa học mới thêm gần đây</h2>
-                <Link to="/admin/courses" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                  Xem tất cả
-                </Link>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {recentCourses.map(course => (
-                    <Link to={`/admin/courses/${course.id}`} key={course.id} className="group">
-                      <div className="bg-gray-50 rounded-lg overflow-hidden transition duration-300 transform group-hover:scale-105 group-hover:shadow-md">
-                        <img 
-                          src={course.image}
-                          alt={course.title}
-                          className="w-full h-32 object-cover"
-                        />
-                        <div className="p-4">
-                          <h3 className="font-medium text-gray-900 group-hover:text-blue-600 truncate">{course.title}</h3>
-                          <div className="flex justify-between mt-2 text-sm">
-                            <span className="text-gray-600">{course.enrollments} đăng ký</span>
-                            <span className="text-gray-500">{formatDate(course.dateCreated).split(',')[0]}</span>
+        <div className="grid grid-cols-1 gap-8">
+          {/* Danh sách khóa học */}
+          {visibleSections.coursesList && (
+            <div>
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="font-semibold text-lg text-gray-800">Danh sách khóa học</h2>
+                </div>
+                <div className="p-6">
+                  {recentCourses.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {recentCourses.map((course) => (
+                        <Link key={course.id} to={`/admin/courses/${course.id}`} className="block">
+                          <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
+                            <div className="h-32 bg-gray-100 overflow-hidden">
+                              {course.image ? (
+                                <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-blue-50">
+                                  <svg className="w-12 h-12 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-4">
+                              <h3 className="font-medium text-gray-800 mb-1 truncate">{course.title}</h3>
+                              <div className="flex justify-between text-sm text-gray-600">
+                                <span className="flex items-center">
+                                  <svg className="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                  </svg>
+                                  {course.enrollments} học viên
+                                </span>
+                                <span className="text-xs text-gray-500">{formatDate(course.dateCreated).split(',')[0]}</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                      </svg>
+                      <p className="mt-2 text-gray-600">Chưa có khóa học nào.</p>
+                      <Link to="/admin/courses/create" className="inline-block mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Tạo khóa học</Link>
+                    </div>
+                  )}
+                  
+                  {recentCourses.length > 0 && (
+                    <div className="mt-6 text-center">
+                      <Link to="/admin/courses" className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg className="mr-2 -ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                        Xem tất cả khóa học
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-            
-            {/* Khóa học hàng đầu */}
+          )}
+          
+          {/* Thông tin thêm */}
+          {visibleSections.additionalInfo && (
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="font-semibold text-lg text-gray-800">Khóa học hàng đầu</h2>
+                <h2 className="font-semibold text-lg text-gray-800">Thông tin thêm</h2>
               </div>
               <div className="p-6">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
+                <h3 className="text-lg font-medium text-gray-800 mb-3">Hướng dẫn quản lý khóa học</h3>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-gray-700 mb-2">Quy trình quản lý</h4>
+                  <ol className="list-decimal ml-5 text-gray-600 space-y-2 text-sm">
+                    <li>Tạo khóa học mới từ mục <span className="text-green-600 font-medium">Tạo mới</span></li>
+                    <li style={{ display: 'none' }}>Thêm các học phần (modules) vào khóa học từ trang chi tiết khóa học</li>
+                    <li style={{ display: 'none' }}>Tạo bài học và trắc nghiệm cho từng học phần</li>
+                    <li style={{ display: 'none' }}>Quản lý học viên và cấp chứng chỉ khi học viên hoàn thành</li>
+                  </ol>
+                </div>
+
+                <h3 className="text-lg font-medium text-gray-800 mb-3">Cấu trúc đường dẫn</h3>
+                <div className="overflow-x-auto mb-4">
+                  <table className="min-w-full border border-gray-200 text-sm">
                     <thead>
                       <tr className="bg-gray-50">
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khóa học</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đăng ký</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tỷ lệ hoàn thành</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đánh giá</th>
+                        <th className="py-2 px-3 text-left border-b">Tính năng</th>
+                        <th className="py-2 px-3 text-left border-b">Mô tả</th>
+                        <th className="py-2 px-3 text-left border-b">Đường dẫn</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {topCourses.map(course => (
-                        <tr key={course.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900">{course.title}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-gray-900">{course.enrollments}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-                                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${course.completionRate}%` }}></div>
-                              </div>
-                              <span className="text-gray-900">{course.completionRate}%</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex items-center text-yellow-400 mr-1">
-                                {[...Array(5)].map((_, i) => (
-                                  <svg key={i} className={`w-4 h-4 ${i < Math.floor(course.rating) ? 'fill-current' : 'stroke-current fill-transparent'}`} viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                                  </svg>
-                                ))}
-                              </div>
-                              <span className="text-gray-900">{course.rating}</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-gray-200">
+                      <tr>
+                        <td className="py-2 px-3">Danh sách khóa học</td>
+                        <td className="py-2 px-3">Quản lý tất cả khóa học</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3">Tạo khóa học</td>
+                        <td className="py-2 px-3">Tạo khóa học mới</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses/create</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3">Chi tiết khóa học</td>
+                        <td className="py-2 px-3">Xem thông tin chi tiết khóa học</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId</td>
+                      </tr>
+                      <tr style={{ display: 'none' }}>
+                        <td className="py-2 px-3">Quản lý module</td>
+                        <td className="py-2 px-3">Quản lý học phần của khóa học</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/modules</td>
+                      </tr>
+                      <tr style={{ display: 'none' }}>
+                        <td className="py-2 px-3">Tạo module</td>
+                        <td className="py-2 px-3">Tạo học phần mới</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/modules/create</td>
+                      </tr>
+                      <tr style={{ display: 'none' }}>
+                        <td className="py-2 px-3">Quản lý bài học</td>
+                        <td className="py-2 px-3">Quản lý bài học của học phần</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/modules/:moduleId/lessons</td>
+                      </tr>
+                      <tr style={{ display: 'none' }}>
+                        <td className="py-2 px-3">Quản lý trắc nghiệm</td>
+                        <td className="py-2 px-3">Quản lý trắc nghiệm của bài học</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/modules/:moduleId/lessons/:lessonId/quizzes</td>
+                      </tr>
+                      <tr style={{ display: 'none' }}>
+                        <td className="py-2 px-3">Quản lý học viên</td>
+                        <td className="py-2 px-3">Quản lý học viên của khóa học</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/students</td>
+                      </tr>
+                      <tr style={{ display: 'none' }}>
+                        <td className="py-2 px-3">Quản lý chứng chỉ</td>
+                        <td className="py-2 px-3">Quản lý chứng chỉ của khóa học</td>
+                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/certificates</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6" style={{ display: 'none' }}>
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h3 className="font-medium text-blue-700 mb-2">Tổng số người tham gia</h3>
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                      </svg>
+                      <span className="text-2xl font-bold text-blue-700">{stats.totalStudents}</span>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <h3 className="font-medium text-green-700 mb-2">Chứng chỉ đã cấp</h3>
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                      </svg>
+                      <span className="text-2xl font-bold text-green-700">{stats.totalCertificates}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

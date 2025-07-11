@@ -3,17 +3,13 @@ import axios from '../utils/axios';
 // Get the count of unique enrolled users
 export const getEnrolledUsersCount = async () => {
   try {
+    // This endpoint is correct based on the backend controller
     const response = await axios.get('/api/enrollments/count');
-    // Đảm bảo trả về đúng dữ liệu
-    if (response.data && typeof response.data.count === 'number') {
-      return response.data;
-    }
-    // Nếu không có dữ liệu, trả về mặc định
-    return { count: 0 };
+    return response.data;
   } catch (error) {
-    console.error('Lỗi khi lấy tổng số học viên:', error);
-    // Trả về giá trị mặc định từ Postman nếu không thể lấy được dữ liệu
-    return { count: 7 };
+    console.error('Error fetching enrolled users count:', error);
+    // Fallback to default value if API call fails
+    return { count: 0 };
   }
 };
 

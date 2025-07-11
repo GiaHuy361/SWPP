@@ -120,8 +120,8 @@ export default function CourseManagement() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-4 sm:p-5 md:p-6 bg-gray-50 min-h-screen w-full">
+      <div className="container mx-auto">
         {/* Header */}
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -137,7 +137,7 @@ export default function CourseManagement() {
         </div>
 
         {/* Search */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="w-full md:w-1/2 relative">
               <input
@@ -195,7 +195,7 @@ export default function CourseManagement() {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Tên khóa học</th>

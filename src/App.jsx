@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './styles/responsive.css';
+import './styles/reset.css';
 import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
@@ -88,9 +90,9 @@ function App() {
   return (
     <AuthProvider>
       <ErrorBoundary>
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen m-0 p-0" style={{ margin: 0, padding: 0 }}>
           <Header />
-          <main className="flex-grow pt-16">
+          <main className="flex-grow" style={{ marginTop: 0, paddingTop: 0 }}>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
