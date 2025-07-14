@@ -15,7 +15,7 @@ function LoginPage() {
   const location = useLocation();
   const { user, login, handleGoogleLogin } = useAuth();
 
-  const redirectPath = location.state?.from || '/user-dashboard';
+  const redirectPath = location.state?.from || '/';
 
   useEffect(() => {
     if (user) {

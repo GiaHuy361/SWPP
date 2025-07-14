@@ -26,7 +26,7 @@ import UserManagement from './pages/UserManagement';
 import RolePermissionPage from './pages/RolePermissionPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyCodePage from './pages/VerifyCodePage';
-import UserDashboard from './pages/UserDashboard';
+
 import AccessDenied from './pages/AccessDenied';
 import NotFoundPage from './pages/NotFoundPage';
 import ContactPage from './pages/ContactPage';
@@ -100,7 +100,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/verify-code" element={<VerifyCodePage />} />
               <Route path="/contact" element={<ContactPage />} />
-              <Route path="/user-dashboard" element={<UserDashboard />} />
+             
               <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
               <Route path="/surveys" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><Surveys /></PrivateRoute>} />
               <Route path="/surveys/:id" element={<PrivateRoute requiredPermission="VIEW_SURVEYS"><SurveyDetail /></PrivateRoute>} />
