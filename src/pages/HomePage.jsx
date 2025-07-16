@@ -201,8 +201,8 @@ const HomePage = () => {
               <Link to="/register" className="px-8 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300">
                 Bắt Đầu Miễn Phí
               </Link>
-              <Link to="/contact" className="px-8 py-3 text-lg font-medium text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-300">
-                Liên Hệ Bán Hàng
+              <Link to="/communication/programs" className="px-8 py-3 text-lg font-medium text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-300">
+                Xem Chương Trình
               </Link>
             </div>
           </motion.div>
@@ -215,7 +215,7 @@ const HomePage = () => {
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-bold text-gray-800 mb-4">
-                Đánh giá mức độ nghiện game
+                Đánh giá mức độ 
               </h2>
               <p className="text-lg text-gray-600">
                 Hoàn thành khảo sát ngắn để nhận kết quả và lời khuyên.

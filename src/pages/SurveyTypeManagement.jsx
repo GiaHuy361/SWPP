@@ -13,6 +13,11 @@ function SurveyTypeManagement() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({});
+  const [riskThresholds, setRiskThresholds] = useState({
+    low: { max: 3 },
+    moderate: { max: 26 },
+    high: { max: 39 }
+  });
   const [editId, setEditId] = useState(null);
 
   useEffect(() => {
@@ -40,6 +45,13 @@ function SurveyTypeManagement() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+  
+  const handleRiskThresholdChange = (level, value) => {
+    setRiskThresholds({
+      ...riskThresholds,
+      [level]: { max: Number(value) }
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +60,7 @@ function SurveyTypeManagement() {
         name: formData.name,
         description: formData.description,
         maxScore: Number(formData.maxScore),
-        riskThresholds: formData.riskThresholds
+        riskThresholds: JSON.stringify(riskThresholds)
       };
       if (editId) {
         await updateSurveyType(editId, typeData);
@@ -59,6 +71,11 @@ function SurveyTypeManagement() {
       }
       setShowForm(false);
       setFormData({});
+      setRiskThresholds({
+        low: { max: 3 },
+        moderate: { max: 26 },
+        high: { max: 39 }
+      });
       setEditId(null);
       fetchSurveyTypes();
     } catch (err) {
@@ -68,7 +85,25 @@ function SurveyTypeManagement() {
 
   const handleEdit = (type) => {
     setShowForm(true);
-    setFormData({ ...type, riskThresholds: JSON.stringify(JSON.parse(type.riskThresholds || '{}'), null, 2) });
+    setFormData({
+      name: type.name,
+      description: type.description,
+      maxScore: type.maxScore
+    });
+    
+    // Parse the risk thresholds from the JSON string
+    try {
+      const parsedThresholds = JSON.parse(type.riskThresholds || '{"low":{"max":3},"moderate":{"max":26},"high":{"max":39}}');
+      setRiskThresholds(parsedThresholds);
+    } catch (err) {
+      console.error("Error parsing risk thresholds:", err);
+      setRiskThresholds({
+        low: { max: 3 },
+        moderate: { max: 26 },
+        high: { max: 39 }
+      });
+    }
+    
     setEditId(type.id);
   };
 
@@ -106,7 +141,16 @@ function SurveyTypeManagement() {
       <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-xl">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Quản lý loại khảo sát</h1>
         <button
-          onClick={() => { setShowForm(true); setFormData({}); setEditId(null); }}
+          onClick={() => { 
+            setShowForm(true); 
+            setFormData({}); 
+            setEditId(null);
+            setRiskThresholds({
+              low: { max: 3 },
+              moderate: { max: 26 },
+              high: { max: 39 }
+            });
+          }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mb-6"
         >
           Thêm loại khảo sát
@@ -147,15 +191,42 @@ function SurveyTypeManagement() {
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-700">Ngưỡng rủi ro (JSON)</label>
-              <textarea
-                name="riskThresholds"
-                value={formData.riskThresholds || ''}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                placeholder='{"low":{"max":3},"moderate":{"max":26},"high":{"max":39}}'
-                required
-              />
+              <label className="block text-gray-700 mb-2">Ngưỡng rủi ro</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg bg-green-50">
+                  <label className="block text-sm text-gray-700 mb-1">Rủi ro thấp (tối đa)</label>
+                  <input
+                    type="number"
+                    value={riskThresholds.low?.max || 0}
+                    onChange={(e) => handleRiskThresholdChange('low', e.target.value)}
+                    className="w-full p-2 border rounded"
+                    required
+                    min="0"
+                  />
+                </div>
+                <div className="p-4 border rounded-lg bg-yellow-50">
+                  <label className="block text-sm text-gray-700 mb-1">Rủi ro trung bình (tối đa)</label>
+                  <input
+                    type="number"
+                    value={riskThresholds.moderate?.max || 0}
+                    onChange={(e) => handleRiskThresholdChange('moderate', e.target.value)}
+                    className="w-full p-2 border rounded"
+                    required
+                    min="0"
+                  />
+                </div>
+                <div className="p-4 border rounded-lg bg-red-50">
+                  <label className="block text-sm text-gray-700 mb-1">Rủi ro cao (tối đa)</label>
+                  <input
+                    type="number"
+                    value={riskThresholds.high?.max || 0}
+                    onChange={(e) => handleRiskThresholdChange('high', e.target.value)}
+                    className="w-full p-2 border rounded"
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex gap-4">
               <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
@@ -163,7 +234,16 @@ function SurveyTypeManagement() {
               </button>
               <button
                 type="button"
-                onClick={() => { setShowForm(false); setFormData({}); setEditId(null); }}
+                onClick={() => { 
+                  setShowForm(false); 
+                  setFormData({}); 
+                  setEditId(null);
+                  setRiskThresholds({
+                    low: { max: 3 },
+                    moderate: { max: 26 },
+                    high: { max: 39 }
+                  });
+                }}
                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
               >
                 Hủy
@@ -191,7 +271,34 @@ function SurveyTypeManagement() {
                   <td className="p-4">{type.name}</td>
                   <td className="p-4">{type.description}</td>
                   <td className="p-4">{type.maxScore}</td>
-                  <td className="p-4">{type.riskThresholds}</td>
+                  <td className="p-4">
+                    {(() => {
+                      try {
+                        const thresholds = JSON.parse(type.riskThresholds || '{}');
+                        return (
+                          <div className="flex flex-col gap-1">
+                            {thresholds.low && (
+                              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                                Thấp: ≤ {thresholds.low.max}
+                              </span>
+                            )}
+                            {thresholds.moderate && (
+                              <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
+                                Trung bình: ≤ {thresholds.moderate.max}
+                              </span>
+                            )}
+                            {thresholds.high && (
+                              <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                                Cao: ≤ {thresholds.high.max}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      } catch (err) {
+                        return <span className="text-red-500">Invalid format</span>;
+                      }
+                    })()}
+                  </td>
                   <td className="p-4">
                     <button
                       onClick={() => handleEdit(type)}
