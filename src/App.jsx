@@ -9,7 +9,7 @@ import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import CommunicationMockSwitcher from './components/CommunicationMockSwitcher';
+
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -192,7 +192,7 @@ function App() {
           </main>
           <Footer />
           <ToastContainer position="top-right" autoClose={5000} />
-          <CommunicationMockSwitcher />
+
         </div>
       </ErrorBoundary>
     </AuthProvider>
