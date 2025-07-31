@@ -26,6 +26,12 @@ export default function AdminDashboard() {
   const [visibleSections, setVisibleSections] = useState({
     courseManagement: true,
     statistics: true,
+    userManagement: true,
+    surveyManagement: true,
+    communicationManagement: true,
+    appointmentManagement: true,
+    blogManagement: true,
+    notificationManagement: true,
     coursesList: true,
     additionalInfo: true
   });
@@ -617,176 +623,240 @@ export default function AdminDashboard() {
           )}
         </div>
         
+        {/* User Management */}
+        <div className="bg-white rounded-lg shadow mb-8 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800">Quản lý người dùng</h2>
+            <button 
+              onClick={() => toggleSection('userManagement')} 
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              {visibleSections.userManagement ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              )}
+            </button>
+          </div>
+          {visibleSections.userManagement && (
+            <div className="p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <Link to="/user-management" className="flex flex-col items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span className="text-center text-xs">Danh sách</span>
+                </Link>
+                <Link to="/create-user" className="flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  <span className="text-center text-xs">Tạo mới</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Survey Management */}
+        <div className="bg-white rounded-lg shadow mb-8 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800">Quản lý khảo sát</h2>
+            <button 
+              onClick={() => toggleSection('surveyManagement')} 
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              {visibleSections.surveyManagement ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              )}
+            </button>
+          </div>
+          {visibleSections.surveyManagement && (
+            <div className="p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <Link to="/surveys" className="flex flex-col items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span className="text-center text-xs">Danh sách</span>
+                </Link>
+                <Link to="/surveys/manage" className="flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  <span className="text-center text-xs">Tạo mới</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Communication Management */}
+        <div className="bg-white rounded-lg shadow mb-8 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800">Quản lý chương trình truyền thông</h2>
+            <button 
+              onClick={() => toggleSection('communicationManagement')} 
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              {visibleSections.communicationManagement ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              )}
+            </button>
+          </div>
+          {visibleSections.communicationManagement && (
+            <div className="p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <Link to="/admin/communication/programs" className="flex flex-col items-center justify-center bg-teal-50 hover:bg-teal-100 text-teal-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span className="text-center text-xs">Danh sách</span>
+                </Link>
+                <Link to="/admin/communication/programs/create" className="flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  <span className="text-center text-xs">Tạo mới</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Appointment Management */}
+        <div className="bg-white rounded-lg shadow mb-8 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800">Quản lý lịch hẹn</h2>
+            <button 
+              onClick={() => toggleSection('appointmentManagement')} 
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              {visibleSections.appointmentManagement ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              )}
+            </button>
+          </div>
+          {visibleSections.appointmentManagement && (
+            <div className="p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <Link to="/manage-appointments" className="flex flex-col items-center justify-center bg-orange-50 hover:bg-orange-100 text-orange-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span className="text-center text-xs">Danh sách</span>
+                </Link>
+                <Link to="/book-appointment" className="flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  <span className="text-center text-xs">Tạo mới</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Blog Management */}
+        <div className="bg-white rounded-lg shadow mb-8 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800">Quản lý Blog</h2>
+            <button 
+              onClick={() => toggleSection('blogManagement')} 
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              {visibleSections.blogManagement ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              )}
+            </button>
+          </div>
+          {visibleSections.blogManagement && (
+            <div className="p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <Link to="/blog/manage" className="flex flex-col items-center justify-center bg-pink-50 hover:bg-pink-100 text-pink-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span className="text-center text-xs">Danh sách</span>
+                </Link>
+                <Link to="/blog/create" className="flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  <span className="text-center text-xs">Tạo mới</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Notification Management */}
+        <div className="bg-white rounded-lg shadow mb-8 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800">Quản lý thông báo</h2>
+            <button 
+              onClick={() => toggleSection('notificationManagement')} 
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              {visibleSections.notificationManagement ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+              )}
+            </button>
+          </div>
+          {visibleSections.notificationManagement && (
+            <div className="p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <Link to="/notifications/manage" className="flex flex-col items-center justify-center bg-red-50 hover:bg-red-100 text-red-700 font-medium p-3 rounded-lg transition duration-300 h-20">
+                  <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span className="text-center text-xs">Danh sách</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+        
         {/* Khung chính */}
         <div className="grid grid-cols-1 gap-8">
-          {/* Danh sách khóa học */}
-          {visibleSections.coursesList && (
-            <div>
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="font-semibold text-lg text-gray-800">Danh sách khóa học</h2>
-                </div>
-                <div className="p-6">
-                  {recentCourses.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {recentCourses.map((course) => (
-                        <Link key={course.id} to={`/admin/courses/${course.id}`} className="block">
-                          <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
-                            <div className="h-32 bg-gray-100 overflow-hidden">
-                              {course.image ? (
-                                <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-blue-50">
-                                  <svg className="w-12 h-12 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                  </svg>
-                                </div>
-                              )}
-                            </div>
-                            <div className="p-4">
-                              <h3 className="font-medium text-gray-800 mb-1 truncate">{course.title}</h3>
-                              <div className="flex justify-between text-sm text-gray-600">
-                                <span className="flex items-center">
-                                  <svg className="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                                  </svg>
-                                  {course.enrollments} học viên
-                                </span>
-                                <span className="text-xs text-gray-500">{formatDate(course.dateCreated).split(',')[0]}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                      </svg>
-                      <p className="mt-2 text-gray-600">Chưa có khóa học nào.</p>
-                      <Link to="/admin/courses/create" className="inline-block mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Tạo khóa học</Link>
-                    </div>
-                  )}
-                  
-                  {recentCourses.length > 0 && (
-                    <div className="mt-6 text-center">
-                      <Link to="/admin/courses" className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <svg className="mr-2 -ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                        Xem tất cả khóa học
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Thông tin thêm */}
-          {visibleSections.additionalInfo && (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="font-semibold text-lg text-gray-800">Thông tin thêm</h2>
-              </div>
-              <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-800 mb-3">Hướng dẫn quản lý khóa học</h3>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
-                  <h4 className="font-medium text-gray-700 mb-2">Quy trình quản lý</h4>
-                  <ol className="list-decimal ml-5 text-gray-600 space-y-2 text-sm">
-                    <li>Tạo khóa học mới từ mục <span className="text-green-600 font-medium">Tạo mới</span></li>
-                    <li style={{ display: 'none' }}>Thêm các học phần (modules) vào khóa học từ trang chi tiết khóa học</li>
-                    <li style={{ display: 'none' }}>Tạo bài học và trắc nghiệm cho từng học phần</li>
-                    <li style={{ display: 'none' }}>Quản lý học viên và cấp chứng chỉ khi học viên hoàn thành</li>
-                  </ol>
-                </div>
-
-                <h3 className="text-lg font-medium text-gray-800 mb-3">Cấu trúc đường dẫn</h3>
-                <div className="overflow-x-auto mb-4">
-                  <table className="min-w-full border border-gray-200 text-sm">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="py-2 px-3 text-left border-b">Tính năng</th>
-                        <th className="py-2 px-3 text-left border-b">Mô tả</th>
-                        <th className="py-2 px-3 text-left border-b">Đường dẫn</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      <tr>
-                        <td className="py-2 px-3">Danh sách khóa học</td>
-                        <td className="py-2 px-3">Quản lý tất cả khóa học</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 px-3">Tạo khóa học</td>
-                        <td className="py-2 px-3">Tạo khóa học mới</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses/create</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 px-3">Chi tiết khóa học</td>
-                        <td className="py-2 px-3">Xem thông tin chi tiết khóa học</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId</td>
-                      </tr>
-                      <tr style={{ display: 'none' }}>
-                        <td className="py-2 px-3">Quản lý module</td>
-                        <td className="py-2 px-3">Quản lý học phần của khóa học</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/modules</td>
-                      </tr>
-                      <tr style={{ display: 'none' }}>
-                        <td className="py-2 px-3">Tạo module</td>
-                        <td className="py-2 px-3">Tạo học phần mới</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/modules/create</td>
-                      </tr>
-                      <tr style={{ display: 'none' }}>
-                        <td className="py-2 px-3">Quản lý bài học</td>
-                        <td className="py-2 px-3">Quản lý bài học của học phần</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/modules/:moduleId/lessons</td>
-                      </tr>
-                      <tr style={{ display: 'none' }}>
-                        <td className="py-2 px-3">Quản lý trắc nghiệm</td>
-                        <td className="py-2 px-3">Quản lý trắc nghiệm của bài học</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/modules/:moduleId/lessons/:lessonId/quizzes</td>
-                      </tr>
-                      <tr style={{ display: 'none' }}>
-                        <td className="py-2 px-3">Quản lý học viên</td>
-                        <td className="py-2 px-3">Quản lý học viên của khóa học</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/students</td>
-                      </tr>
-                      <tr style={{ display: 'none' }}>
-                        <td className="py-2 px-3">Quản lý chứng chỉ</td>
-                        <td className="py-2 px-3">Quản lý chứng chỉ của khóa học</td>
-                        <td className="py-2 px-3 text-blue-600">/admin/courses/:courseId/certificates</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6" style={{ display: 'none' }}>
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h3 className="font-medium text-blue-700 mb-2">Tổng số người tham gia</h3>
-                    <div className="flex items-center">
-                      <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                      </svg>
-                      <span className="text-2xl font-bold text-blue-700">{stats.totalStudents}</span>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <h3 className="font-medium text-green-700 mb-2">Chứng chỉ đã cấp</h3>
-                    <div className="flex items-center">
-                      <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-                      </svg>
-                      <span className="text-2xl font-bold text-green-700">{stats.totalCertificates}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+         
         </div>
       </div>
     </div>
   );
 }
+

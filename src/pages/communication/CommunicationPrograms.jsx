@@ -9,8 +9,6 @@ const CommunicationPrograms = () => {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [pagination, setPagination] = useState({
@@ -33,19 +31,9 @@ const CommunicationPrograms = () => {
       setError('Bạn không có quyền xem chương trình truyền thông');
       setLoading(false);
     }
-  }, [canViewPrograms, pagination.page, pagination.size, statusFilter, sortBy, sortOrder]); // Bỏ searchTerm khỏi dependency
+  }, [canViewPrograms, pagination.page, pagination.size, sortBy, sortOrder]); // Đã xóa statusFilter khỏi dependency
 
-  useEffect(() => {
-    // Debounce search term
-    const delayedSearch = setTimeout(() => {
-      if (searchTerm !== '') {
-        setPagination(prev => ({ ...prev, page: 0 }));
-        fetchPrograms();
-      }
-    }, 500);
-
-    return () => clearTimeout(delayedSearch);
-  }, [searchTerm]);
+  // Đã xóa useEffect searchTerm
 
   const fetchPrograms = async () => {
     try {
@@ -53,9 +41,7 @@ const CommunicationPrograms = () => {
       const params = {
         page: pagination.page,
         size: pagination.size,
-        sort: `${sortBy},${sortOrder}`,
-        search: searchTerm || undefined,
-        status: statusFilter || undefined
+        sort: `${sortBy},${sortOrder}`
       };
 
       // Remove undefined values
@@ -177,9 +163,7 @@ const CommunicationPrograms = () => {
   };
 
   const handleSearch = (e) => {
-    e.preventDefault();
-    setPagination(prev => ({ ...prev, page: 0 }));
-    fetchPrograms();
+    // Đã xóa handleSearch
   };
 
   const handleSort = (field) => {
@@ -344,45 +328,7 @@ const CommunicationPrograms = () => {
           </div>
         </div>
 
-        {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm chương trình..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Tất cả trạng thái</option>
-                <option value="ACTIVE">Đang hoạt động</option>
-                <option value="INACTIVE">Tạm dừng</option>
-                <option value="COMPLETED">Đã hoàn thành</option>
-                <option value="DRAFT">Bản nháp</option>
-                <option value="PENDING">Chờ duyệt</option>
-                <option value="CANCELLED">Đã hủy</option>
-              </select>
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center gap-2"
-              >
-                <FaFilter className="w-4 h-4" />
-                Lọc
-              </button>
-            </div>
-          </form>
-        </div>
+        {/* Đã xóa filter UI */}
 
         {/* Programs List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

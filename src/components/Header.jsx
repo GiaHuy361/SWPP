@@ -92,10 +92,16 @@ function Header() {
             )}
             {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications || canManageBlogs || canManageCategories || canManagePrograms || canManageAppointments) && (
               <div className="relative group">
-                <button className="flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 rounded-full p-2.5 w-10 h-10">
+                <button
+                  className="flex items-center justify-center bg-gradient-to-br from-blue-500 via-blue-200 to-blue-100 hover:from-blue-600 hover:to-blue-200 text-blue-700 rounded-full shadow border border-blue-200 hover:border-blue-400 transition-all duration-150 p-0 w-11 h-11 scale-100 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  style={{ boxShadow: '0 2px 8px 0 rgba(59,130,246,0.10)' }}
+                  aria-label="Quản lý tài khoản"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.966 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <circle cx="12" cy="12" r="10" fill="#e6f0fa" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" stroke="#2563eb" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.966 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke="#2563eb" />
+                    <circle cx="15" cy="12" r="3" stroke="#2563eb" strokeWidth={1.5} />
                   </svg>
                 </button>
                 <div className="absolute right-0 w-56 mt-2 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
