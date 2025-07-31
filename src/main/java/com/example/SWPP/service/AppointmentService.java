@@ -44,8 +44,8 @@ public class AppointmentService {
     }
 
     // Create: Đặt lịch hẹn
-    public Appointment createAppointment(Long userId, Long consultantId, LocalDateTime appointmentTime) {
-        logger.info("Creating appointment: userId={}, consultantId={}, time={}", userId, consultantId, appointmentTime);
+    public Appointment createAppointment(Long userId, Long consultantId, LocalDateTime appointmentTime, String note) {
+        logger.info("Creating appointment: userId={}, consultantId={}, time={}, note={}", userId, consultantId, appointmentTime, note);
         checkAuthority("BOOK_APPOINTMENTS");
         if (appointmentTime.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Không thể đặt lịch quá khứ");
@@ -69,13 +69,13 @@ public class AppointmentService {
         appointment.setUser(user);
         appointment.setConsultant(consultant);
         appointment.setAppointmentTime(appointmentTime);
+        appointment.setNote(note);
         return appointmentRepository.save(appointment);
     }
 
     // Read: Lấy tất cả lịch hẹn
     public List<AppointmentDTO> getAllAppointments() {
         logger.info("Fetching all appointments");
-        // Bỏ checkAuthority("MANAGE_APPOINTMENTS") vì quyền được xử lý trong controller
         return appointmentRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
@@ -144,6 +144,9 @@ public class AppointmentService {
         if (request.getMeetLink() != null) {
             appointment.setMeetLink(request.getMeetLink());
         }
+        if (request.getNote() != null) {
+            appointment.setNote(request.getNote());
+        }
         Appointment savedAppointment = appointmentRepository.save(appointment);
         return mapToDTO(savedAppointment);
     }
@@ -172,6 +175,7 @@ public class AppointmentService {
         dto.setStatus(appointment.getStatus());
         dto.setMeetLink(appointment.getMeetLink());
         dto.setCreatedAt(appointment.getCreatedAt());
+        dto.setNote(appointment.getNote());
         return dto;
     }
 
@@ -185,12 +189,14 @@ public class AppointmentService {
                 "Kính gửi %s,\n\n" +
                         "Lịch hẹn của bạn với tư vấn viên %s đã được xác nhận.\n" +
                         "Thời gian: %s\n" +
+                        "Ghi chú: %s\n" +
                         "Link Google Meet: %s\n\n" +
                         "Vui lòng tham gia đúng giờ. Trân trọng,\n" +
                         "Hệ thống",
                 appointment.getUser().getFullName(),
                 appointment.getConsultant().getUser().getFullName(),
                 appointment.getAppointmentTime().format(DATE_TIME_FORMATTER),
+                appointment.getNote() != null ? appointment.getNote() : "Không có ghi chú",
                 appointment.getMeetLink()
         );
 

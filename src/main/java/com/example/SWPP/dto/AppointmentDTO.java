@@ -22,6 +22,7 @@ public class AppointmentDTO {
     // Thêm các trường mới
     private String consultantQualification;
     private Integer consultantExperienceYears;
+    private String note;  // Thêm trường note
 
     // Constructors
     public AppointmentDTO() {}
@@ -54,4 +55,7 @@ public class AppointmentDTO {
     public void setConsultantQualification(String consultantQualification) { this.consultantQualification = consultantQualification; }
     public Integer getConsultantExperienceYears() { return consultantExperienceYears; }
     public void setConsultantExperienceYears(Integer consultantExperienceYears) { this.consultantExperienceYears = consultantExperienceYears; }
+    // Getter và Setter cho note
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 }

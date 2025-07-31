@@ -36,8 +36,8 @@ public class AppointmentController {
     public ResponseEntity<?> createAppointment(
             @Valid @RequestBody CreateAppointmentRequest request,
             Authentication authentication) {
-        logger.info("Creating appointment: userId={}, consultantId={}, time={}",
-                request.getUserId(), request.getConsultantId(), request.getAppointmentTime());
+        logger.info("Creating appointment: userId={}, consultantId={}, time={}, note={}",
+                request.getUserId(), request.getConsultantId(), request.getAppointmentTime(), request.getNote());
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -46,7 +46,8 @@ public class AppointmentController {
             Appointment appointment = appointmentService.createAppointment(
                     request.getUserId(),
                     request.getConsultantId(),
-                    request.getAppointmentTime()
+                    request.getAppointmentTime(),
+                    request.getNote()
             );
             return ResponseEntity.ok(Map.of("appointmentId", appointment.getAppointmentId(), "message", "Đặt lịch thành công"));
         } catch (Exception e) {
@@ -70,19 +71,15 @@ public class AppointmentController {
             }
             List<AppointmentDTO> appointments;
             if (userId != null) {
-                // Người dùng bình thường xem lịch của chính họ
                 appointments = appointmentService.getAppointmentsByUserId(userId);
             } else {
-                // Kiểm tra vai trò người dùng
                 boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"));
                 boolean isManager = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Manager"));
                 boolean isConsultant = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Consultant"));
 
                 if (isAdmin || isManager) {
-                    // Admin và Manager xem tất cả lịch hẹn
                     appointments = appointmentService.getAllAppointments();
                 } else if (isConsultant) {
-                    // Consultant chỉ xem lịch hẹn của chính họ
                     String consultantEmail = authentication.getName();
                     appointments = appointmentService.getAppointmentsByConsultantEmail(consultantEmail);
                 } else {

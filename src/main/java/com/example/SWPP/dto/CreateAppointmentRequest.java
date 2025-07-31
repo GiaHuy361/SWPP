@@ -12,6 +12,7 @@ public class CreateAppointmentRequest {
     @NotNull
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime appointmentTime;
+    private String note;  // Thêm trường note, không bắt buộc
 
     // Getters and Setters
     public Long getUserId() { return userId; }
@@ -20,4 +21,6 @@ public class CreateAppointmentRequest {
     public void setConsultantId(Long consultantId) { this.consultantId = consultantId; }
     public LocalDateTime getAppointmentTime() { return appointmentTime; }
     public void setAppointmentTime(LocalDateTime appointmentTime) { this.appointmentTime = appointmentTime; }
+    public String getNote() { return note; }  // Getter cho note
+    public void setNote(String note) { this.note = note; }  // Setter cho note
 }

@@ -32,6 +32,9 @@ public class Appointment {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "note")  // Thêm trường note
+    private String note;
+
     public enum Status {
         PENDING, CONFIRMED, CANCELLED, COMPLETED
     }
@@ -54,4 +57,8 @@ public class Appointment {
     public void setMeetLink(String meetLink) { this.meetLink = meetLink; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    // Getter và Setter cho note
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 }
