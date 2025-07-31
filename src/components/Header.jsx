@@ -42,6 +42,7 @@ function Header() {
   const canManageCategories = user && user.permissions?.includes('MANAGE_CATEGORIES');
   const canViewPrograms = user && user.permissions?.includes('VIEW_PROGRAMS');
   const canManagePrograms = user && user.permissions?.includes('MANAGE_PROGRAMS');
+  const canManageConsultants = user && user.permissions?.includes('MANAGE_CONSULTANTS'); // Thêm biến kiểm tra quyền quản lý tư vấn viên
 
   return (
     <header
@@ -90,7 +91,7 @@ function Header() {
             {isAuthenticated && (
               <NotificationDropdown />
             )}
-            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications || canManageBlogs || canManageCategories || canManagePrograms || canManageAppointments) && (
+            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications || canManageBlogs || canManageCategories || canManagePrograms || canManageAppointments || canManageConsultants) && (
               <div className="relative group">
                 <button className="flex items-center justify-center bg-green-50 hover:bg-green-100 text-green-700 rounded-full p-2.5 w-10 h-10">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -181,6 +182,14 @@ function Header() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       Quản lý lịch hẹn
+                    </Link>
+                  )}
+                  {canManageConsultants && (
+                    <Link to="/admin/consultant-management" className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                      <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      Quản lý tư vấn viên
                     </Link>
                   )}
                 </div>
@@ -301,7 +310,7 @@ function Header() {
                 Lịch hẹn của tôi
               </Link>
             )}
-            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications || canManageBlogs || canManageCategories || canManagePrograms || canManageAppointments) && (
+            {(isAdmin || canManageUsers || canManageRoles || canManageSurveys || canManageNotifications || canManageBlogs || canManageCategories || canManagePrograms || canManageAppointments || canManageConsultants) && (
               <>
                 <div className="py-2.5 text-gray-700 text-lg font-medium">
                   Quản lý tài khoản:
@@ -424,6 +433,18 @@ function Header() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Quản lý lịch hẹn
+                  </Link>
+                )}
+                {canManageConsultants && (
+                  <Link
+                    to="/admin/consultant-management"
+                    className="block py-2.5 pl-4 text-gray-700 text-lg flex items-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <svg className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Quản lý tư vấn viên
                   </Link>
                 )}
               </>

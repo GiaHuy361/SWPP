@@ -13,13 +13,14 @@ import CommunicationMockSwitcher from './components/CommunicationMockSwitcher';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import CreateUserPage from './pages/CreateUserPage';
+// Kiểm tra và điều chỉnh import cho CreateUserPage và EditUserPage
+import CreateUserPage from './pages/CreateUserPage'; // Đảm bảo file tồn tại
+import EditUserPage from './pages/EditUserPage';    // Đảm bảo file tồn tại
 import Profile from './pages/Profile';
 import SurveyDetail from './pages/SurveyDetail';
 import BookAppointment from './pages/BookAppointment';
 import ManageAppointments from './pages/ManageAppointments';
 import AppointmentDetail from './pages/AppointmentDetail';
-import EditUserPage from './pages/EditUserPage';
 import Surveys from './pages/Surveys';
 import SurveyResults from './pages/SurveyResults';
 import UserManagement from './pages/UserManagement';
@@ -85,6 +86,11 @@ import BlogDetailPage from './pages/BlogDetailPage';
 import BlogManagementPage from './pages/BlogManagementPage';
 import BlogFormPage from './pages/BlogFormPage';
 import CategoryManagementPage from './pages/CategoryManagementPage';
+
+// Consultant Management Components
+import ConsultantManagement from './pages/admin/ConsultantManagement';
+import CreateConsultant from './pages/admin/CreateConsultant';
+import EditConsultant from './pages/admin/EditConsultant';
 
 function App() {
   return (
@@ -173,6 +179,11 @@ function App() {
               <Route path="/blog/create" element={<PrivateRoute requiredPermission="MANAGE_BLOGS"><BlogFormPage /></PrivateRoute>} />
               <Route path="/blog/edit/:id" element={<PrivateRoute requiredPermission="MANAGE_BLOGS"><BlogFormPage /></PrivateRoute>} />
               <Route path="/categories/manage" element={<PrivateRoute requiredPermission="MANAGE_CATEGORIES"><CategoryManagementPage /></PrivateRoute>} />
+              
+              {/* Consultant Management Routes */}
+              <Route path="/admin/consultant-management" element={<PrivateRoute requiredPermission="MANAGE_CONSULTANTS"><ConsultantManagement /></PrivateRoute>} />
+              <Route path="/admin/create-consultant" element={<PrivateRoute requiredPermission="MANAGE_CONSULTANTS"><CreateConsultant /></PrivateRoute>} />
+              <Route path="/admin/edit-consultant/:id" element={<EditConsultant />} />
               
               <Route path="/access-denied" element={<AccessDenied />} />
               <Route path="/register" element={<RegisterPage />} />

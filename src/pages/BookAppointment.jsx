@@ -11,11 +11,11 @@ function BookAppointment() {
   const [selectedConsultant, setSelectedConsultant] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [note, setNote] = useState(''); // Thêm state cho note
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Danh sách thời gian cố định
   const availableTimes = [
     '08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'
   ];
@@ -77,7 +77,8 @@ function BookAppointment() {
       const appointmentData = {
         userId: user.userId,
         consultantId: parseInt(selectedConsultant),
-        appointmentTime: `${selectedDate}T${selectedTime}:00`
+        appointmentTime: `${selectedDate}T${selectedTime}:00`,
+        note // Thêm note vào dữ liệu gửi
       };
       console.log('Sending appointment data:', appointmentData);
       const response = await createAppointment(appointmentData);
@@ -165,6 +166,20 @@ function BookAppointment() {
                 <option key={time} value={time}>{time}</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
+              Ghi chú
+            </label>
+            <textarea
+              id="note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Nhập ghi chú về vấn đề bạn muốn tư vấn (tùy chọn)"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              rows={4}
+            />
           </div>
 
           <div className="flex justify-end">
