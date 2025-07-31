@@ -172,6 +172,10 @@ function AppointmentDetail() {
               </p>
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700">Ghi chú</label>
+              <p className="mt-1 text-gray-900">{appointment.note || 'Không có ghi chú'}</p>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-gray-700">Link Google Meet</label>
               {appointment.meetLink ? (
                 <a href={appointment.meetLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">

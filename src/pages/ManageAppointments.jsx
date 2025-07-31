@@ -14,6 +14,8 @@ function ManageAppointments() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [note, setNote] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -30,7 +32,6 @@ function ManageAppointments() {
     const fetchAppointments = async () => {
       setLoading(true);
       try {
-        // Không truyền consultantId, backend sẽ xử lý dựa trên vai trò
         const response = await apiClient.get('/appointments', {
           withCredentials: true
         });
@@ -70,6 +71,7 @@ function ManageAppointments() {
       result = result.filter(appointment => 
         (appointment.userFullName || '').toLowerCase().includes(term) ||
         (appointment.userEmail || '').toLowerCase().includes(term) ||
+        (appointment.note || '').toLowerCase().includes(term) || // Thêm tìm kiếm theo note
         new Date(appointment.appointmentTime).toLocaleDateString('vi-VN').includes(term)
       );
     }
@@ -97,6 +99,44 @@ function ManageAppointments() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpdateNote = async (appointmentId) => {
+    if (!note.trim()) {
+      toast.error('Ghi chú không được để trống.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await apiClient.put(`/appointments/${appointmentId}`, { note }, { withCredentials: true });
+      setAppointments(appointments.map(appointment => 
+        appointment.appointmentId === appointmentId 
+          ? { ...appointment, note } 
+          : appointment
+      ));
+      setSuccessMessage('Đã cập nhật ghi chú thành công');
+      toast.success('Đã cập nhật ghi chú thành công');
+      setEditingNoteId(null);
+      setNote('');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || 'Cập nhật ghi chú thất bại.';
+      setError(errorMsg);
+      toast.error(errorMsg);
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEditingNote = (appointmentId, currentNote) => {
+    setEditingNoteId(appointmentId);
+    setNote(currentNote || '');
+  };
+
+  const cancelEditingNote = () => {
+    setEditingNoteId(null);
+    setNote('');
   };
 
   const formatAppointmentTime = (dateTimeString) => {
@@ -162,7 +202,7 @@ function ManageAppointments() {
             <div className="relative w-full md:w-64">
               <input
                 type="text"
-                placeholder="Tìm kiếm theo tên, email, ngày..."
+                placeholder="Tìm kiếm theo tên, email, ngày, ghi chú..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -191,6 +231,7 @@ function ManageAppointments() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tư vấn viên</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ghi chú</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link họp</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
                   </tr>
@@ -228,6 +269,46 @@ function ManageAppointments() {
                              appointment.status === 'COMPLETED' ? 'Đã hoàn thành' :
                              appointment.status}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {editingNoteId === appointment.appointmentId ? (
+                            <div className="flex flex-col gap-2">
+                              <textarea
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                rows={3}
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleUpdateNote(appointment.appointmentId)}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                  disabled={loading}
+                                >
+                                  Lưu
+                                </button>
+                                <button
+                                  onClick={cancelEditingNote}
+                                  className="px-3 py-1 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                                  disabled={loading}
+                                >
+                                  Hủy
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-900">
+                              {appointment.note || 'Không có ghi chú'}
+                              {user?.permissions?.includes('MANAGE_APPOINTMENTS') && (
+                                <button
+                                  onClick={() => startEditingNote(appointment.appointmentId, appointment.note)}
+                                  className="ml-2 text-blue-600 hover:text-blue-800"
+                                >
+                                  Sửa
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           {appointment.meetLink ? (

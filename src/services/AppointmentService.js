@@ -104,3 +104,67 @@ export const getAppointmentById = async (id) => {
     throw error;
   }
 };
+
+// Các hàm quản lý tư vấn viên
+export const createConsultant = async (consultantData) => {
+  try {
+    const response = await apiClient.post('/consultants', consultantData, { withCredentials: true });
+    console.log('createConsultant response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('Error in createConsultant:', {
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      data: error.response?.data,
+      userRole: getCurrentUser()?.role || 'Unknown'
+    });
+    throw error;
+  }
+};
+
+export const updateConsultant = async (id, consultantData) => {
+  try {
+    const response = await apiClient.put(`/consultants/${id}`, consultantData, { withCredentials: true });
+    console.log('updateConsultant response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('Error in updateConsultant:', {
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      data: error.response?.data
+    });
+    throw error;
+  }
+};
+
+export const deleteConsultant = async (id) => {
+  try {
+    const response = await apiClient.delete(`/consultants/${id}`, { withCredentials: true });
+    console.log('deleteConsultant response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('Error in deleteConsultant:', {
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      data: error.response?.data
+    });
+    throw error;
+  }
+};
+
+// Thêm hàm getConsultantById
+export const getConsultantById = async (id) => {
+  try {
+    const response = await apiClient.get(`/consultants/${id}`, { withCredentials: true });
+    console.log('getConsultantById response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('Error in getConsultantById:', {
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      data: error.response?.data,
+      userRole: getCurrentUser()?.role || 'Unknown'
+    });
+    throw error;
+  }
+};
